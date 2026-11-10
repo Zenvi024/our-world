@@ -7,14 +7,16 @@
 --
 -- What it creates:
 --   1. A "private" schema with the membership check used by every rule
---   2. Tables: profiles, memories, photos, letters, advancement_unlocks
+--   2. Tables: profiles, memories, photos, letters, advancement_unlocks,
+--      splash_texts
 --   3. Row Level Security so only the two members can read or write anything
 --   4. Letter functions: send_letter, get_letters, mark_letter_read,
 --      cancel_letter (undelivered letters stay invisible to the recipient,
 --      and a surprise letter's arrival time stays hidden from everyone)
 --   5. The private "photos" storage bucket and its rules
 --   6. ping() for the keep-alive job
---   7. Profile rows for the two accounts that already exist
+--   7. Profile rows for the two accounts that already exist, and two
+--      starter splash texts
 -- =============================================================================
 
 begin;
@@ -177,6 +179,16 @@ create table public.advancement_unlocks (
   primary key (user_id, advancement_key)
 );
 
+-- Splash texts: the yellow lines that take turns on the title screen.
+-- Both members can add and remove them in Settings.
+create table public.splash_texts (
+  id uuid primary key default gen_random_uuid(),
+  body text not null check (char_length(btrim(body)) between 1 and 40),
+  created_by uuid default auth.uid()
+    constraint splash_texts_created_by_fkey references public.profiles (id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
 -- -----------------------------------------------------------------------------
 -- 5. Access rules
 --    Two locks on every table: (a) which roles may touch it at all (grants),
@@ -188,6 +200,7 @@ alter table public.memories enable row level security;
 alter table public.photos enable row level security;
 alter table public.letters enable row level security;
 alter table public.advancement_unlocks enable row level security;
+alter table public.splash_texts enable row level security;
 
 -- (a) Grants. Start from zero so the result is the same on every project,
 --     whatever its default privileges are.
@@ -196,7 +209,8 @@ revoke all on table
   public.memories,
   public.photos,
   public.letters,
-  public.advancement_unlocks
+  public.advancement_unlocks,
+  public.splash_texts
 from public, anon, authenticated;
 
 grant select on table public.profiles to authenticated;
@@ -210,6 +224,8 @@ grant select, insert, delete on table public.photos to authenticated;
 grant update (memory_id, sort_order) on table public.photos to authenticated;
 
 grant select, insert on table public.advancement_unlocks to authenticated;
+
+grant select, insert, delete on table public.splash_texts to authenticated;
 
 -- No grants on public.letters: see section 6.
 
@@ -286,6 +302,19 @@ create policy "Members can view advancement unlocks"
 create policy "Members can record their own advancement unlocks"
   on public.advancement_unlocks for insert to authenticated
   with check ((select private.is_member()) and user_id = (select auth.uid()));
+
+-- splash_texts: both members can view, add, and remove lines.
+create policy "Members can view splash texts"
+  on public.splash_texts for select to authenticated
+  using ((select private.is_member()));
+
+create policy "Members can add splash texts"
+  on public.splash_texts for insert to authenticated
+  with check ((select private.is_member()) and created_by = (select auth.uid()));
+
+create policy "Members can remove splash texts"
+  on public.splash_texts for delete to authenticated
+  using ((select private.is_member()));
 
 -- -----------------------------------------------------------------------------
 -- 6. Letter functions (the only way the app touches letters)
@@ -537,6 +566,14 @@ select
     else 'Zen'
   end
 from auth.users u;
+
+-- Two splash texts to start with; add more in Settings.
+insert into public.splash_texts (body, created_by)
+select t.body, u.id
+from (values ('my lab!'), ('silly goose')) as t (body)
+cross join (
+  select id from auth.users where lower(email) <> 'enricoangelo736@gmail.com'
+) u;
 
 commit;
 

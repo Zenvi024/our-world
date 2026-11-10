@@ -357,3 +357,18 @@ Claude adds the GitHub Actions keep-alive so the free Supabase project doesn't p
 - [ ] Jay's account sees all memories; an undelivered letter is invisible to him.
 - [ ] Add to Home Screen shows the lily icon.
 - [ ] Nothing secret is in the GitHub repo.
+
+---
+
+## 14. Decisions made with Zen (November 10, 2026)
+
+These answer the open questions in section 12 and take priority over the working defaults above.
+
+- **Site title:** "Our Little World," with "by Zen & Jay" beneath it on the Play screen.
+- **Week start:** Monday.
+- **Stack count:** the number of photos on that date.
+- **Splash text:** yes, and it must be editable in the app. Splash texts live in the `splash_texts` table (members only) and are managed in Settings. They take turns on the title screen. Signed-out visitors only ever see a generic default line.
+- **Jay's account:** already exists in Supabase Auth. Never ask Zen for passwords or keys.
+- **Letters:** the app reads and writes letters only through the database functions `send_letter`, `get_letters`, `mark_letter_read`, and `cancel_letter`, so a surprise letter's arrival time stays hidden from both people.
+- **Fonts:** Pixelify Sans for the logo only; Jersey 15 for headings and buttons; VT323 for small labels and numbers (its digits are the easiest to tell apart).
+- **Supabase access from Claude Code:** the Supabase connector in the cloud session cannot see the `our-world` project, so Zen runs `supabase/migration.sql` himself in the SQL Editor.
