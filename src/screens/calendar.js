@@ -18,6 +18,7 @@ import { signedUrls } from '../data/photos.js';
 import { openModal } from '../components/modal.js';
 import { openChest } from './chest.js';
 import { openBulkUpload } from './bulkUpload.js';
+import { checkAdvancements } from '../data/advancements.js';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -76,8 +77,14 @@ export function createCalendar() {
     show();
   }
 
+  // After photos or memories change, redraw and look for new advancements.
+  function changed() {
+    show();
+    checkAdvancements();
+  }
+
   function openDay(date) {
-    openChest(date, { onChange: show });
+    openChest(date, { onChange: changed });
   }
 
   async function show() {
@@ -202,7 +209,7 @@ export function createCalendar() {
       ),
       h(
         'button',
-        { class: 'btn btn--green', type: 'button', onclick: () => openBulkUpload({ onDone: show }) },
+        { class: 'btn btn--green', type: 'button', onclick: () => openBulkUpload({ onDone: changed }) },
         'Add photos',
       ),
     ),

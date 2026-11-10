@@ -6,6 +6,7 @@ import {
   signOut,
   getSession,
 } from '../session.js';
+import { isSfxOn, setSfx, isMusicOn, setMusic } from '../lib/sound.js';
 import {
   fetchSplash,
   addSplash,
@@ -177,6 +178,17 @@ function splashSection() {
   );
 }
 
+function soundSection() {
+  const sfx = h('input', { type: 'checkbox', id: 'sound-sfx', checked: isSfxOn(), onchange: () => setSfx(sfx.checked) });
+  const music = h('input', { type: 'checkbox', id: 'sound-music', checked: isMusicOn(), onchange: () => setMusic(music.checked) });
+  return section(
+    'Sound',
+    h('p', { class: 'hint' }, 'These choices are remembered on this device.'),
+    h('label', { class: 'check check--row', for: 'sound-sfx' }, sfx, 'Sound effects (button clicks and pop-ups)'),
+    h('label', { class: 'check check--row', for: 'sound-music' }, music, 'Music (a soft music-box tune)'),
+  );
+}
+
 function passwordSection() {
   const status = createStatus();
   const first = h('input', {
@@ -273,6 +285,7 @@ export function createSettings() {
     'div',
     { class: 'settings' },
     displayNameSection(),
+    soundSection(),
     splashSection(),
     passwordSection(),
     signOutSection(),

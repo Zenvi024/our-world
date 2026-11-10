@@ -3,6 +3,10 @@ import { isConfigured } from '../supabase.js';
 import { getSession, signIn } from '../session.js';
 import { cachedSplash, fetchSplash } from '../data/splash.js';
 import { startLandscape } from '../art/landscape.js';
+import { pixelArt } from '../art/pixel.js';
+import { ICON_NOTE, ICON_HEART } from '../art/sprites.js';
+import { isMusicOn, setMusic, onMusicChange, playPoke } from '../lib/sound.js';
+import { loadPartner, sendPoke } from '../data/pokes.js';
 
 const SPLASH_SECONDS = 5;
 
@@ -137,10 +141,58 @@ function createNotice(message, onClose) {
   return overlay;
 }
 
+// The corner button that turns the music on and off.
+function createMusicButton() {
+  const button = h(
+    'button',
+    { class: 'btn music-button', type: 'button', onclick: () => setMusic(!isMusicOn()) },
+    pixelArt(ICON_NOTE),
+  );
+  const show = (on) => {
+    button.setAttribute('aria-pressed', String(on));
+    button.setAttribute('aria-label', on ? 'Turn the music off' : 'Turn the music on');
+    button.title = on ? 'Music is on' : 'Music is off';
+  };
+  show(isMusicOn());
+  return { el: button, stop: onMusicChange(show) };
+}
+
+// "Poke Jay": a tiny hello that pops up on the other person's screen.
+function createPokeButton() {
+  const label = h('span', null, 'Poke');
+  const button = h('button', { class: 'btn poke-button', type: 'button', hidden: true, 'data-quiet': 'true' }, pixelArt(ICON_HEART), label);
+  loadPartner()
+    .then((partner) => {
+      if (!partner) return;
+      label.textContent = `Poke ${partner.name}`;
+      button.hidden = false;
+      button.addEventListener('click', async () => {
+        button.disabled = true;
+        try {
+          await sendPoke(partner.id);
+          playPoke();
+          label.textContent = 'Poked!';
+        } catch (error) {
+          label.textContent = 'Could not poke';
+        }
+        setTimeout(() => {
+          label.textContent = `Poke ${partner.name}`;
+          button.disabled = false;
+        }, 2500);
+      });
+    })
+    .catch(() => {
+      // The button stays hidden if the partner cannot be loaded.
+    });
+  return button;
+}
+
 // Shows the title screen inside root. Returns a function that cleans it up.
 export function mountTitle(root, { onEnter }) {
   const canvas = h('canvas', { class: 'landscape', 'aria-hidden': 'true' });
   const splash = createSplash();
+  const music = createMusicButton();
+  const signedIn = isConfigured && Boolean(getSession());
   let dialog = null;
 
   const closeDialog = () => {
@@ -200,8 +252,10 @@ export function mountTitle(root, { onEnter }) {
         h('p', { class: 'logo-by' }, 'by Zen & Jay'),
       ),
       playButton,
+      signedIn && createPokeButton(),
       h('p', { class: 'title-foot' }, 'Since November 13, 2024'),
     ),
+    music.el,
   );
 
   root.replaceChildren(screen);
@@ -221,5 +275,6 @@ export function mountTitle(root, { onEnter }) {
   return () => {
     stopLandscape();
     splash.stop();
+    music.stop();
   };
 }

@@ -5,14 +5,15 @@ import {
   ICON_LETTERS,
   ICON_ADVANCEMENTS,
   ICON_SETTINGS,
+  ICON_COIN,
 } from '../art/sprites.js';
 
 // Nine slots, like a hotbar. Empty slots are saved for later features.
 const SLOTS = [
   { route: 'calendar', label: 'Calendar', icon: ICON_CALENDAR },
   { route: 'letters', label: 'Letters', icon: ICON_LETTERS },
-  { route: 'advancements', label: 'Advancements', icon: ICON_ADVANCEMENTS },
-  null,
+  { route: 'advancements', label: 'Goals', icon: ICON_ADVANCEMENTS },
+  { route: 'ledger', label: 'Ledger', icon: ICON_COIN },
   null,
   null,
   null,

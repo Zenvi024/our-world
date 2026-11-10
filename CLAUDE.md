@@ -381,13 +381,19 @@ These answer the open questions in section 12 and take priority over the working
 - Title screen is a cozy scene: a cottage with a red roof and birch walls, bonsai-style cherry blossom trees (after Zen's reference photo), snow-capped mountains fading into the sky, falling petals (Zen really likes these), chimney smoke, and two front-facing hopping capybaras modeled on the cream capybara toy at home (one carries an orange on its head, like the toy).
 - A house button in the top-left of every in-world screen returns to the title screen.
 
-### Pending milestone: "Cozy extras" (after Batch 1 ships; Zen said these can wait, and to batch them however is most efficient)
-Do not let these delay Milestones 3 to 5. Several need new database tables, so propose the schema to Zen first.
+### Also done (Milestone 3, with Zen's additions)
+- **Goals** (Zen's idea for customizable advancements): the Goals screen holds a shared bucket list. Each goal has a title, notes, and an optional "from" and "to" date. Goals can be reordered with arrows, marked "Done!" (which pops up "Goal Reached!" once for each person), and moved back with "Not yet." The built-in advancements sit below them.
+- **Ledger** (hotbar coin): expenses in pesos, who paid, shared equally or owed in full, a running "who owes whom" balance, and "Settle up."
+- **Pokes:** a "Poke" button on the Play screen; the other person gets a dark pop-up.
+- **Play screen as a notice board:** pokes every time; once a day per device, an anniversary countdown (within 30 days), "On this day" with last year's photo (tap to open that day), and a goal whose target window is here.
+- **Sound:** original, synthesized click sounds and pop-up jingles (on by default) and an original music-box loop (off by default; note button on the Play screen). Both have switches in Settings and are remembered per device. There are no audio files.
+- Goals, the ledger, and pokes use `supabase/migration-2.sql`, which Zen runs after `migration.sql`.
 
-1. **Seasons for the title screen:** a way to switch between spring (current), autumn, and winter versions of the scene.
-2. **Night mode:** a dark version of the scene, and a dark mode for the whole site that changes the palette and overall vibe.
-3. **The Play screen as a landing page** that reminds them of each other:
-   - **Pokes:** Zen pokes Jay and Jay pokes Zen; the poke appears as a dark, achievement-style pop-up. (Needs a table.)
-   - **Reminders** for upcoming dates. (Ties into Batch 2 date invitations.)
-   - **On this day:** show the photo uploaded for today's date in past years. (Can reuse the calendar's "On this day" data; signed-in only.)
-4. **"Happybara" virtual pet** (new hotbar slot, perhaps an egg icon): a Tamagotchi-style capybara the two care for together. It persists and keeps running: it has needs (food, water), and they can feed it, play with it, bathe it, and tap it for reactions. Caring for it earns points, which buy food, things for the capybara, and furniture for the house. Zen left the specifics to the builder. (Needs tables and a design pass.)
+### Still to do, in this order (Zen asked that none of these be forgotten)
+1. **Milestone 4: letters** (book and quill, three delivery modes), so a letter can arrive on November 13.
+2. **Milestone 5: ship** (merge to `main`, keep-alive workflow, QR code, final checklist).
+3. **"Happybara" virtual pet** (new hotbar slot, perhaps an egg icon): a Tamagotchi-style capybara the two care for together. It persists and keeps running: it has needs (food, water), and they can feed it, play with it, bathe it, and tap it for reactions. Caring for it earns points, which buy food, things for the capybara, and furniture for the house. Zen left the specifics to the builder. Needs its own tables (a third SQL file).
+4. **Seasons for the title screen:** a way to switch between spring (current), autumn, and winter versions of the scene.
+5. **Night mode:** a dark version of the scene, and a dark mode for the whole site that changes the palette and overall vibe.
+6. **Reminders for upcoming dates** beyond goals and the anniversary (ties into Batch 2 date invitations).
+7. Batch 2 as written in section 5: Anniversary mode, crafting table date generator, date invitations.

@@ -4,6 +4,9 @@ import { LILY, ICON_HOME } from '../art/sprites.js';
 import { createHotbar } from '../components/hotbar.js';
 import { createSettings } from './settings.js';
 import { createCalendar } from './calendar.js';
+import { createAdvancements } from './advancements.js';
+import { createLedger } from './ledger.js';
+import { createXpBar } from '../components/xpBar.js';
 
 function comingSoon(message) {
   return () =>
@@ -21,10 +24,8 @@ const SCREENS = {
     title: 'Letters',
     create: comingSoon('The book and quill is not ready yet. Letters are coming soon.'),
   },
-  advancements: {
-    title: 'Advancements',
-    create: comingSoon('Advancements are coming soon.'),
-  },
+  advancements: { title: 'Goals', create: createAdvancements },
+  ledger: { title: 'Ledger', create: createLedger },
   settings: { title: 'Settings', create: createSettings },
 };
 
@@ -57,7 +58,7 @@ export function mountWorld(root) {
         heading,
       ),
       outlet,
-      h('footer', { class: 'hud' }, hotbar.el),
+      h('footer', { class: 'hud' }, createXpBar(), hotbar.el),
     ),
   );
 
