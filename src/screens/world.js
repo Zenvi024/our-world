@@ -3,6 +3,7 @@ import { pixelArt } from '../art/pixel.js';
 import { LILY, ICON_HOME } from '../art/sprites.js';
 import { createHotbar } from '../components/hotbar.js';
 import { createSettings } from './settings.js';
+import { createCalendar } from './calendar.js';
 
 function comingSoon(message) {
   return () =>
@@ -15,10 +16,7 @@ function comingSoon(message) {
 }
 
 const SCREENS = {
-  calendar: {
-    title: 'Calendar',
-    create: comingSoon('The inventory calendar is being built. Your memories will live here soon.'),
-  },
+  calendar: { title: 'Calendar', create: createCalendar },
   letters: {
     title: 'Letters',
     create: comingSoon('The book and quill is not ready yet. Letters are coming soon.'),

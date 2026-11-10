@@ -1,6 +1,7 @@
 import './styles/base.css';
 import './styles/title.css';
 import './styles/world.css';
+import './styles/calendar.css';
 import { currentRoute, navigate, onRouteChange } from './router.js';
 import { initSession, getSession, onSessionChange } from './session.js';
 import { mountTitle } from './screens/title.js';

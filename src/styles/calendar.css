@@ -1,0 +1,748 @@
+/* ---------- Month view: an inventory panel of day slots ---------- */
+.calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.calendar-panel {
+  padding: 12px 10px 12px;
+}
+
+.month-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.month-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.625rem;
+  padding-inline: 8px;
+}
+
+.month-step {
+  width: 48px;
+  padding: 0;
+  font-size: 2rem;
+  line-height: 0.8;
+  padding-bottom: 6px;
+}
+
+.weekday-row,
+.day-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.weekday-row {
+  margin-bottom: 4px;
+  font-family: var(--font-pixel);
+  font-size: 1.125rem;
+  line-height: 1;
+  text-align: center;
+  color: #45433d;
+}
+
+.day-slot {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--stone-mid);
+  border: 0;
+  border-radius: 0;
+  box-shadow:
+    inset 2px 2px 0 #373737,
+    inset -2px -2px 0 #ffffff;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.day-slot--blank {
+  background: #b4b4b4;
+  box-shadow:
+    inset 2px 2px 0 #9a9a9a,
+    inset -2px -2px 0 #d9d9d9;
+  cursor: default;
+}
+
+button.day-slot:hover {
+  background: #a3a3a3;
+}
+
+button.day-slot:focus-visible {
+  z-index: 2;
+  outline: 3px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.day-cover {
+  position: absolute;
+  inset: 2px;
+  width: calc(100% - 4px);
+  height: calc(100% - 4px);
+  object-fit: cover;
+}
+
+.day-number,
+.stack-count,
+.year-label {
+  position: absolute;
+  z-index: 1;
+  font-family: var(--font-pixel);
+  line-height: 0.8;
+  color: #ffffff;
+  text-shadow:
+    2px 2px 0 #2b2a26,
+    0 0 3px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.day-number {
+  top: 4px;
+  left: 5px;
+  font-size: 1.125rem;
+}
+
+.stack-count {
+  right: 4px;
+  bottom: 4px;
+  font-size: 1.375rem;
+}
+
+/* A day with words but no photos shows a small cream page. */
+.day-slot--note::after {
+  content: '';
+  position: absolute;
+  right: 22%;
+  bottom: 18%;
+  width: 34%;
+  height: 42%;
+  background:
+    linear-gradient(#b9b29a, #b9b29a) 25% 30% / 50% 2px no-repeat,
+    linear-gradient(#b9b29a, #b9b29a) 25% 55% / 50% 2px no-repeat,
+    var(--cream);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.day-slot--today {
+  z-index: 1;
+  outline: 3px solid #ffffff;
+  outline-offset: -1px;
+  box-shadow:
+    inset 2px 2px 0 #373737,
+    inset -2px -2px 0 #ffffff,
+    0 0 0 4px var(--ink);
+}
+
+/* November 13 wears a lily-of-the-valley frame every year. */
+.day-slot--anniversary {
+  background: #a9d79a;
+  box-shadow:
+    inset 0 0 0 3px var(--grass-mid),
+    inset 0 0 0 5px #eaf7e2;
+}
+
+.day-slot--anniversary .day-cover {
+  inset: 5px;
+  width: calc(100% - 10px);
+  height: calc(100% - 10px);
+}
+
+.day-lily {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  right: 0;
+  width: 58%;
+  height: 58%;
+  filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.45));
+  pointer-events: none;
+}
+
+.day-slot--anniversary.day-slot--filled .day-lily {
+  width: 46%;
+  height: 46%;
+}
+
+.calendar-note {
+  margin-top: 10px;
+  font-family: var(--font-pixel);
+  font-size: 1.25rem;
+  line-height: 1.1;
+  text-align: center;
+  color: #45433d;
+}
+
+.calendar-note:empty {
+  display: none;
+}
+
+.calendar-note--error {
+  color: var(--danger-dark);
+}
+
+.calendar-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.calendar-actions .btn--green {
+  flex: 1;
+  max-width: 260px;
+}
+
+/* ---------- Shared pieces for the pop-up panels ---------- */
+.modal-panel {
+  width: min(100%, 520px);
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  outline: none;
+}
+
+.small-panel,
+.confirm-panel {
+  width: min(100%, 380px);
+}
+
+.confirm-text {
+  font-size: 1.0625rem;
+}
+
+textarea.input {
+  resize: vertical;
+  min-height: 96px;
+  line-height: 1.45;
+}
+
+select.input {
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ink) 50%),
+    linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 55%,
+    calc(100% - 12px) 55%;
+  background-size:
+    6px 6px,
+    6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 34px;
+}
+
+input[type='date'].input {
+  min-width: 0;
+  text-align: left;
+}
+
+.form-delete {
+  margin-right: auto;
+}
+
+.progress {
+  margin: 4px 0 8px;
+}
+
+.progress-bar {
+  height: 20px;
+  background: #3b3b3b;
+  border: var(--edge) solid var(--stone-deep);
+  box-shadow: inset 2px 2px 0 #1f1f1f;
+}
+
+.progress-fill {
+  width: 0;
+  height: 100%;
+  background-color: var(--grass);
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0 10px,
+    rgba(0, 0, 0, 0.28) 10px 12px
+  );
+  box-shadow:
+    inset 0 3px 0 var(--grass-light),
+    inset 0 -3px 0 var(--grass-dark);
+  transition: width 0.2s steps(4);
+}
+
+.progress-text {
+  margin-top: 6px;
+  font-family: var(--font-pixel);
+  font-size: 1.25rem;
+  line-height: 1.1;
+}
+
+/* ---------- The chest: everything kept on one day ---------- */
+.chest {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* The lid: wooden planks with a metal latch. */
+.chest-lid {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 10px 14px 14px;
+  color: #ffffff;
+  background-color: var(--dirt);
+  background-image:
+    repeating-linear-gradient(90deg, transparent 0 46px, rgba(0, 0, 0, 0.22) 46px 48px),
+    linear-gradient(var(--dirt-light) 0 4px, transparent 4px);
+  border-bottom: var(--edge) solid var(--stone-deep);
+  box-shadow: inset 0 -4px 0 var(--dirt-dark);
+}
+
+.chest-lid::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  width: 14px;
+  height: 16px;
+  margin-left: -7px;
+  background: #d6d6d6;
+  border: 2px solid var(--stone-deep);
+  box-shadow: inset -3px -3px 0 #8b8b8b;
+}
+
+.chest-title {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.5rem;
+  line-height: 1.05;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+.chest-close {
+  flex: none;
+  width: 44px;
+  padding: 0 0 4px;
+  font-size: 1.75rem;
+}
+
+.chest-tray:empty {
+  display: none;
+}
+
+.chest-tray {
+  flex: none;
+  padding: 14px 14px 0;
+}
+
+.tray-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tray-message .status {
+  flex: 1;
+  margin: 0;
+}
+
+.chest-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 18px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.memory {
+  padding: 10px;
+  background: #b4b4b4;
+  border: 2px solid var(--stone-dark);
+  box-shadow: inset 2px 2px 0 #d9d9d9;
+}
+
+.memory-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.memory-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding-top: 6px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.5rem;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.memory-note {
+  margin-top: 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.memory-caption {
+  margin-top: 6px;
+  font-style: italic;
+  color: #45433d;
+  overflow-wrap: anywhere;
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 3px;
+  margin-top: 10px;
+}
+
+.photo-slot {
+  position: relative;
+  display: block;
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 2px;
+  overflow: hidden;
+  background: var(--stone-mid);
+  border: 0;
+  border-radius: 0;
+  box-shadow:
+    inset 2px 2px 0 #373737,
+    inset -2px -2px 0 #ffffff;
+  cursor: pointer;
+}
+
+.photo-slot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-slot--cover {
+  box-shadow:
+    inset 0 0 0 3px #ffd83d,
+    inset 2px 2px 0 #373737;
+  padding: 3px;
+}
+
+.photo-slot--cover::after {
+  content: '★';
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 0.9375rem;
+  color: #ffd83d;
+  text-shadow: 1px 1px 0 #2b2a26;
+}
+
+.memory-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.memory-by {
+  font-family: var(--font-pixel);
+  font-size: 1.125rem;
+  line-height: 1;
+  color: #45433d;
+}
+
+.chest-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 8px 4px;
+  text-align: center;
+  font-family: var(--font-pixel);
+  font-size: 1.375rem;
+  line-height: 1.1;
+}
+
+.chest-empty .empty-lily {
+  width: 72px;
+  height: 72px;
+}
+
+.chest-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.on-this-day {
+  padding-top: 12px;
+  border-top: 2px solid var(--stone-mid);
+}
+
+.on-this-day-title {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.375rem;
+  line-height: 1;
+}
+
+.on-this-day .hint {
+  margin: 0;
+}
+
+.on-this-day-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.year-label {
+  left: 0;
+  right: 0;
+  bottom: 5px;
+  font-size: 1.25rem;
+  text-align: center;
+}
+
+/* ---------- Full-screen photo viewer ---------- */
+.overlay--viewer {
+  padding: 0;
+  background: #0d0f0b;
+}
+
+.viewer {
+  width: 100%;
+  height: 100dvh;
+  max-height: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.viewer-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: max(8px, env(safe-area-inset-top)) 10px 8px;
+}
+
+.viewer-bar:last-child {
+  padding: 8px 10px max(10px, env(safe-area-inset-bottom));
+}
+
+.viewer :focus-visible {
+  outline-color: #ffffff;
+}
+
+.viewer-counter {
+  font-family: var(--font-pixel);
+  font-size: 1.375rem;
+  line-height: 1;
+}
+
+.viewer-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.viewer-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.viewer-image--loading {
+  opacity: 0.25;
+}
+
+.viewer-status {
+  position: absolute;
+  inset: auto 0 12px;
+  text-align: center;
+  font-family: var(--font-pixel);
+  font-size: 1.375rem;
+  text-shadow: 2px 2px 0 #000000;
+  pointer-events: none;
+}
+
+.viewer-step {
+  position: absolute;
+  top: 50%;
+  width: 44px;
+  min-height: 56px;
+  margin-top: -28px;
+  padding: 0 0 6px;
+  font-size: 2rem;
+  line-height: 0.8;
+  opacity: 0.85;
+}
+
+.viewer-step--previous {
+  left: 6px;
+}
+
+.viewer-step--next {
+  right: 6px;
+}
+
+/* ---------- Adding many photos at once ---------- */
+.bulk {
+  display: flex;
+  flex-direction: column;
+}
+
+.bulk-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.bulk-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.bulk-group {
+  padding: 10px;
+  background: #b4b4b4;
+  border: 2px solid var(--stone-dark);
+  box-shadow: inset 2px 2px 0 #d9d9d9;
+}
+
+.bulk-group--undated {
+  border-color: var(--danger-dark);
+}
+
+.bulk-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bulk-heading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.375rem;
+  line-height: 1.05;
+}
+
+.bulk-count {
+  flex: none;
+  font-family: var(--font-pixel);
+  font-size: 1.1875rem;
+  line-height: 1;
+  color: #45433d;
+}
+
+.bulk-group .hint {
+  margin: 6px 0 8px;
+}
+
+.bulk-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 3px;
+  margin: 8px 0;
+}
+
+.bulk-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--stone-mid);
+  box-shadow:
+    inset 2px 2px 0 #373737,
+    inset -2px -2px 0 #ffffff;
+  font-family: var(--font-pixel);
+  font-size: 1.125rem;
+  color: #ffffff;
+  text-shadow: 1px 1px 0 #2b2a26;
+}
+
+.bulk-thumb img {
+  width: 100%;
+  height: 100%;
+  padding: 2px;
+  object-fit: cover;
+}
+
+.bulk-move {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-pixel);
+  font-size: 1.1875rem;
+  line-height: 1.1;
+}
+
+.bulk-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.bulk-row .bulk-thumb {
+  flex: none;
+  width: 52px;
+}
+
+.bulk-row-main {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bulk-name {
+  font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bulk-footer {
+  position: sticky;
+  bottom: -16px;
+  margin: 10px -16px -16px;
+  padding: 10px 16px 16px;
+  background: var(--stone);
+  border-top: 2px solid var(--stone-mid);
+}

@@ -29,5 +29,27 @@ export function friendlyError(error) {
   if (/password should be at least/i.test(message)) {
     return 'That password is too short. Please use at least 8 characters.';
   }
+  if (/could not find the table|schema cache|does not exist/i.test(message)) {
+    return 'This part of the world is not set up yet. The database setup still needs to be run.';
+  }
   return 'Something went wrong. Please try again.';
 }
+
+// Opens the device's photo picker and calls back with the chosen files.
+export function pickPhotos(onPicked) {
+  const input = h('input', {
+    type: 'file',
+    accept: 'image/*,.heic,.heif',
+    multiple: true,
+    hidden: true,
+    onchange: () => {
+      const files = [...input.files];
+      input.remove();
+      if (files.length) onPicked(files);
+    },
+  });
+  document.body.append(input);
+  input.click();
+}
+
+export const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;

@@ -70,5 +70,18 @@ export async function saveDisplayName(displayName) {
     .single();
   if (error) throw error;
   profile = data;
+  memberNames = null;
   return profile;
+}
+
+let memberNames = null;
+
+// A Map of member id -> display name, for "Added by" labels.
+export async function loadMemberNames() {
+  if (!memberNames) {
+    const { data, error } = await supabase.from('profiles').select('id, display_name');
+    if (error) throw error;
+    memberNames = new Map(data.map((row) => [row.id, row.display_name]));
+  }
+  return memberNames;
 }
