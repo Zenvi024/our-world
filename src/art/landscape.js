@@ -13,41 +13,55 @@ const SKY = ['#63b0ea', '#74bcee', '#86c8f1', '#99d3f4', '#addef7', '#c2e8f9', '
 const GRASS = ['#6cc24a', '#5bb543', '#4fa63a', '#46952f'];
 const DIRT = ['#9b6a42', '#8a5a37', '#7b4f30', '#6b4329'];
 const STONE = ['#8f8f8f', '#858585', '#7a7a7a', '#6f6f6f'];
-const BLOSSOM = ['#ffd3e4', '#f9b9d3', '#f7a8c9', '#f9b9d3'];
-const BLOSSOM_SHADE = ['#ee8fb7', '#e57aa8', '#f29fc2'];
+const BLOSSOM_LIGHT = ['#ffe3ee', '#ffd3e4', '#ffd3e4'];
+const BLOSSOM = ['#f9b9d3', '#f7a8c9', '#f9b9d3', '#ffd3e4'];
+const BLOSSOM_SHADE = ['#e884b0', '#d97aa8', '#c97aae'];
 const BUSH = ['#3f8f2f', '#46952f', '#57a83c'];
 const ROOF = ['#c8423a', '#b5372f'];
 const PETAL = ['#ffd3e4', '#f7a8c9', '#ffffff'];
 const BLOOMS = ['#ff8fb8', '#ffd83d', '#ffffff', '#f7a8c9'];
 
+// The capybaras are modeled on the one at home: cream and round, with a
+// brown snout, tiny ears, and something balanced on its head.
 const CAPYBARA_COLORS = {
-  B: '#b5814f', // coat
-  b: '#96683c', // coat shade
-  d: '#6b4526', // legs
-  e: '#7a5230', // ear
-  n: '#4d321c', // nose
-  k: '#2b2a26', // eye
+  C: '#f6e6a6', // cream coat
+  c: '#e2cc80', // coat shade
+  S: '#b08556', // snout
+  N: '#7d5a36', // nose
+  E: '#a37a4f', // ears
+  P: '#d2b06e', // paws
+  F: '#a37a4f', // feet
+  k: '#2b2a26', // eyes
+  O: '#f28c1e', // orange
+  o: '#ffb648', // orange shine
+  p: '#f7a8c9', // blossom
+  w: '#ffe3ee', // blossom center
 };
 
 const CAPYBARA_BODY = [
-  '...........ee..',
-  '.........bBBBB.',
-  '.....bbbbBBBkBB',
-  '..bbBBBBBBBBBBn',
-  '.bBBBBBBBBBBBBB',
-  '.bBBBBBBBBBBBB.',
-  '.bBBBBBBBBBBb..',
-  '..bBBBBBBBBBb..',
+  '.EE.CCCCC.EE.',
+  '.EECCCCCCCEE.',
+  '..CCCCCCCCC..',
+  '.CCCCCCCCCCC.',
+  '.CkCCSSSCCkC.',
+  '.CCCSSSSSCCC.',
+  '.CCCSSNSSCCC.',
+  '.CCCCSSSCCCC.',
+  '.CCCCCCCCCCC.',
+  '.CCPCCCCCPCC.',
+  '.cCCCCCCCCCc.',
+  '..cCCCCCCCc..',
+  '..FF.....FF..',
 ];
-const CAPYBARA_LEGS = [
-  ['..d...d..d...d.', '..d...d..d...d.'],
-  ['...d.d....d.d..', '..d...d..d...d.'],
+const CAPYBARA_HATS = [
+  ['.....OoO.....', '.....OOO.....'], // an orange
+  ['......p......', '.....pwp.....'], // a cherry blossom
 ];
-const CAPYBARA_FRAMES = CAPYBARA_LEGS.map((legs) => [...CAPYBARA_BODY, ...legs]);
-const flip = (rows) => rows.map((row) => [...row].reverse().join(''));
-const CAPYBARA_FRAMES_LEFT = CAPYBARA_FRAMES.map(flip);
+const CAPYBARAS = CAPYBARA_HATS.map((hat) => [...hat, ...CAPYBARA_BODY]);
 const CAPYBARA_WIDTH = CAPYBARA_BODY[0].length;
-const CAPYBARA_HEIGHT = CAPYBARA_FRAMES[0].length;
+const CAPYBARA_HEIGHT = CAPYBARAS[0].length;
+const HOP_TICKS = 7;
+const flip = (rows) => rows.map((row) => [...row].reverse().join(''));
 const LILY_FLIPPED = flip(LILY);
 
 // A repeatable "random" number from 0 to 1 for any pixel, so the texture
@@ -153,41 +167,113 @@ function drawGround(ctx, width, height, levels) {
 const groundAt = (levels, x) =>
   levels[Math.max(0, Math.min(levels.length - 1, Math.floor(x / BLOCK)))] * BLOCK;
 
-// A cherry blossom tree: dark trunk, then fluffy pink clusters.
-function drawCherryTree(ctx, x, groundY, size = 1) {
-  const trunkHeight = Math.round(17 * size);
-  for (let y = 0; y < trunkHeight; y += 1) {
-    for (let dx = 0; dx < 3; dx += 1) {
-      rect(ctx, dx === 0 ? '#5a3a2e' : dx === 2 ? '#7a5140' : '#6b4636', x - 1 + dx, groundY - 1 - y, 1, 1);
+// Draws a thick line of pixels from one point to another.
+function limb(ctx, x0, y0, x1, y1, thickness, seed) {
+  const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1);
+  for (let i = 0; i <= steps; i += 1) {
+    const x = Math.round(x0 + ((x1 - x0) * i) / steps);
+    const y = Math.round(y0 + ((y1 - y0) * i) / steps);
+    for (let t = 0; t < thickness; t += 1) {
+      const px = x - Math.floor(thickness / 2) + t;
+      let color = '#8a6038';
+      if (t === 0) color = '#5f3f26';
+      else if (t === thickness - 1 && thickness > 2) color = '#b08a52';
+      else if (noise(px, y, seed) < 0.3) color = '#a37a48';
+      rect(ctx, color, px, y, 1, 1);
     }
   }
-  // Two short branches reaching into the blossoms.
-  for (let i = 0; i < 4; i += 1) {
-    rect(ctx, '#5a3a2e', x - 2 - i, groundY - trunkHeight + 3 - i, 1, 2);
-    rect(ctx, '#6b4636', x + 2 + i, groundY - trunkHeight + 1 - i, 1, 2);
+}
+
+// One cloud of blossoms: a puffy dome with a flat, shaded underside.
+function blossomPad(ctx, cx, cy, rx, ry) {
+  for (let px = -rx; px <= rx; px += 1) {
+    const dome = ry * Math.sqrt(1 - (px * px) / (rx * rx + 1));
+    const top = -Math.round(dome + noise(cx + px, cy, 11) * 1.2);
+    const bottom = 1 + (noise(cx + px, cy, 12) < 0.35 ? 1 : 0);
+    for (let py = top; py <= bottom; py += 1) {
+      let colors = BLOSSOM;
+      if (py <= top + 1) colors = BLOSSOM_LIGHT;
+      else if (py >= bottom - 1) colors = BLOSSOM_SHADE;
+      rect(ctx, pick(colors, cx + px, cy + py, 13), cx + px, cy + py, 1, 1);
+    }
   }
-  const clusters = [
-    { dx: 0, dy: -24, rx: 14, ry: 8 },
-    { dx: -9, dy: -19, rx: 8, ry: 6 },
-    { dx: 9, dy: -18, rx: 8, ry: 6 },
-    { dx: -2, dy: -31, rx: 9, ry: 6 },
-    { dx: 6, dy: -28, rx: 7, ry: 5 },
+}
+
+// A cherry blossom tree shaped like a bonsai: a thick, winding trunk with
+// spreading roots, and separate clouds of blossoms at the ends of its branches.
+function drawCherryTree(ctx, x, groundY, size = 1, mirror = false) {
+  const m = mirror ? -1 : 1;
+  const at = (dx, dy) => [x + Math.round(dx * size * m), groundY + Math.round(dy * size)];
+  const line = (from, to, thickness) =>
+    limb(ctx, ...at(...from), ...at(...to), Math.max(1, Math.round(thickness * size)), 23);
+
+  // Roots, then the winding trunk.
+  line([-5, 0], [-1, -4], 2);
+  line([5, 0], [1, -4], 2);
+  line([0, 0], [-1, -5], 6);
+  line([-1, -5], [-3, -10], 5);
+  line([-3, -10], [0, -15], 4);
+  line([0, -15], [3, -20], 3);
+  line([3, -20], [1, -26], 2);
+  line([1, -26], [2, -31], 2);
+  // Branches.
+  line([-3, -10], [-12, -13], 2);
+  line([0, -15], [-8, -20], 2);
+  line([3, -20], [13, -18], 2);
+  line([3, -20], [10, -25], 1);
+  line([1, -26], [-5, -29], 1);
+
+  const pads = [
+    [-13, -14, 9, 4],
+    [-9, -21, 7, 3],
+    [14, -19, 9, 4],
+    [10, -26, 6, 3],
+    [-5, -30, 6, 3],
+    [3, -33, 7, 3],
+    [1, -17, 5, 2],
   ];
-  for (const cluster of clusters) {
-    const cx = x + Math.round(cluster.dx * size);
-    const cy = groundY + Math.round(cluster.dy * size);
-    const rx = Math.round(cluster.rx * size);
-    const ry = Math.round(cluster.ry * size);
-    for (let py = -ry; py <= ry; py += 1) {
-      for (let px = -rx; px <= rx; px += 1) {
-        const reach = (px * px) / (rx * rx) + (py * py) / (ry * ry);
-        if (reach > 1 - noise(cx + px, cy + py, 11) * 0.3) continue;
-        const shaded = py > ry * 0.35 || noise(cx + px, cy + py, 12) < 0.12;
-        const colors = shaded ? BLOSSOM_SHADE : BLOSSOM;
-        rect(ctx, pick(colors, cx + px, cy + py, 13), cx + px, cy + py, 1, 1);
+  for (const [dx, dy, rx, ry] of pads) {
+    const [cx, cy] = at(dx, dy);
+    blossomPad(ctx, cx, cy, Math.round(rx * size), Math.max(2, Math.round(ry * size)));
+  }
+}
+
+// Far-off ranges of tall, snow-capped peaks, faded into the sky.
+function drawRange(ctx, width, horizon, range) {
+  const peaks = [];
+  for (let i = -1; i * range.spacing < width + range.spacing; i += 1) {
+    peaks.push({
+      center: i * range.spacing + noise(i, 1, range.seed) * range.spacing * 0.6,
+      tall: range.tall * (0.7 + noise(i, 2, range.seed) * 0.5),
+      slope: 1.15 + noise(i, 3, range.seed) * 0.5,
+    });
+  }
+  for (let x = 0; x < width; x += 1) {
+    let rise = 0;
+    let owner = null;
+    for (const peak of peaks) {
+      const here = peak.tall - Math.abs(x - peak.center) * peak.slope;
+      if (here > rise) {
+        rise = here;
+        owner = peak;
       }
     }
+    if (!owner) continue;
+    rise = Math.round(rise + noise(Math.floor(x / 3), 3, range.seed) * 3);
+    const top = horizon - rise;
+    const sunny = x < owner.center; // the left faces catch the light
+    rect(ctx, sunny ? range.rock : range.shade, x, top, 1, rise);
+    // Snow caps the top third of each peak, with a ragged lower edge.
+    const snow = rise - owner.tall * 0.62 - (x % 5 < 2 ? 2 : 0) - noise(x, 9, range.seed) * 3;
+    if (snow > 0) rect(ctx, sunny ? '#fbfdff' : '#dde8f3', x, top, 1, Math.round(snow));
   }
+}
+
+function drawMountains(ctx, width, horizon) {
+  // Tall on phones, a little lower on wide screens so the title stays clear.
+  const tall = Math.min(62, horizon * 0.5);
+  drawRange(ctx, width, horizon, { seed: 60, spacing: tall * 0.95, tall, rock: '#c5d5e6', shade: '#b6c8dc' });
+  drawRange(ctx, width, horizon, { seed: 70, spacing: tall * 0.7, tall: tall * 0.7, rock: '#a9bcd1', shade: '#93a9c2' });
 }
 
 function drawBush(ctx, x, groundY, w) {
@@ -363,14 +449,15 @@ function drawPetals(ctx, width, horizon, seconds) {
   }
 }
 
-// Capybaras amble along the ground, pause to rest, and turn around.
+// Capybaras face you and get around in little hops, resting in between.
 function createCapybaras(width) {
-  return [0.18, 0.72].map((spot, i) => ({
+  return [0.16, 0.74].map((spot, i) => ({
     x: width * spot,
     direction: i % 2 ? -1 : 1,
-    resting: 0,
-    step: 0,
+    resting: 4 + i * 9,
+    hop: 0,
     seed: i + 1,
+    sprite: CAPYBARAS[i % CAPYBARAS.length],
   }));
 }
 
@@ -380,23 +467,26 @@ function moveCapybaras(herd, width, tick) {
       capybara.resting -= 1;
       continue;
     }
-    const roll = noise(tick, capybara.seed, 40);
-    if (roll < 0.012) capybara.resting = 15 + Math.floor(noise(tick, capybara.seed, 41) * 35);
-    else if (roll > 0.994) capybara.direction *= -1;
-    capybara.x += capybara.direction * 0.35;
-    capybara.step += 1;
+    capybara.hop += 1;
+    capybara.x += capybara.direction * 0.7;
     if (capybara.x < 2) capybara.direction = 1;
     if (capybara.x > width - CAPYBARA_WIDTH - 2) capybara.direction = -1;
+    if (capybara.hop >= HOP_TICKS) {
+      // Landed: take a breath, sometimes a long one, sometimes turn around.
+      capybara.hop = 0;
+      const roll = noise(tick, capybara.seed, 40);
+      capybara.resting = roll < 0.2 ? 25 + Math.floor(roll * 150) : 3;
+      if (noise(tick, capybara.seed, 41) > 0.9) capybara.direction *= -1;
+    }
   }
 }
 
 function drawCapybaras(ctx, herd, levels) {
   for (const capybara of herd) {
-    const frames = capybara.direction > 0 ? CAPYBARA_FRAMES : CAPYBARA_FRAMES_LEFT;
-    const frame = capybara.resting > 0 ? 0 : Math.floor(capybara.step / 3) % 2;
     const x = Math.round(capybara.x);
-    const y = groundAt(levels, x + CAPYBARA_WIDTH / 2) - CAPYBARA_HEIGHT;
-    drawSprite(ctx, frames[frame], x, y, CAPYBARA_COLORS);
+    const lift = Math.round(Math.sin((Math.PI * capybara.hop) / HOP_TICKS) * 4);
+    const y = groundAt(levels, x + CAPYBARA_WIDTH / 2) - CAPYBARA_HEIGHT - lift;
+    drawSprite(ctx, capybara.sprite, x, y, CAPYBARA_COLORS);
   }
 }
 
@@ -453,14 +543,14 @@ export function startLandscape(canvas) {
     [sky, skyCtx] = makeLayer(width, height);
     [front, frontCtx] = makeLayer(width, height);
     drawSky(skyCtx, width, height, horizon, wide);
+    drawMountains(frontCtx, width, horizon);
     drawHills(frontCtx, width, height, horizon);
 
     // Cherry blossom trees stand behind the house, so they are drawn first.
-    drawCherryTree(frontCtx, houseX - 4, groundAt(levels, houseX - 4), 1.1);
-    drawCherryTree(frontCtx, houseX + 41, groundAt(levels, houseX + 41), 0.9);
+    drawCherryTree(frontCtx, houseX - 7, groundAt(levels, houseX - 7), 1.15);
+    drawCherryTree(frontCtx, houseX + 43, groundAt(levels, houseX + 43), 0.95, true);
     if (wide) {
-      drawCherryTree(frontCtx, Math.round(width * 0.8), groundAt(levels, width * 0.8), 1);
-      drawCherryTree(frontCtx, Math.round(width * 0.95), groundAt(levels, width * 0.95), 0.8);
+      drawCherryTree(frontCtx, Math.round(width * 0.82), groundAt(levels, width * 0.82), 1.1);
     }
 
     drawGround(frontCtx, width, height, levels);

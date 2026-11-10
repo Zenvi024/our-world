@@ -372,3 +372,22 @@ These answer the open questions in section 12 and take priority over the working
 - **Letters:** the app reads and writes letters only through the database functions `send_letter`, `get_letters`, `mark_letter_read`, and `cancel_letter`, so a surprise letter's arrival time stays hidden from both people.
 - **Fonts:** Pixelify Sans for the logo only; Jersey 15 for headings and buttons; VT323 for small labels and numbers (its digits are the easiest to tell apart).
 - **Supabase access from Claude Code:** the Supabase connector in the cloud session cannot see the `our-world` project, so Zen runs `supabase/migration.sql` himself in the SQL Editor.
+
+---
+
+## 15. Zen's later requests (November 10, 2026)
+
+### Done
+- Title screen is a cozy scene: a cottage with a red roof and birch walls, bonsai-style cherry blossom trees (after Zen's reference photo), snow-capped mountains fading into the sky, falling petals (Zen really likes these), chimney smoke, and two front-facing hopping capybaras modeled on the cream capybara toy at home (one carries an orange on its head, like the toy).
+- A house button in the top-left of every in-world screen returns to the title screen.
+
+### Pending milestone: "Cozy extras" (after Batch 1 ships; Zen said these can wait, and to batch them however is most efficient)
+Do not let these delay Milestones 3 to 5. Several need new database tables, so propose the schema to Zen first.
+
+1. **Seasons for the title screen:** a way to switch between spring (current), autumn, and winter versions of the scene.
+2. **Night mode:** a dark version of the scene, and a dark mode for the whole site that changes the palette and overall vibe.
+3. **The Play screen as a landing page** that reminds them of each other:
+   - **Pokes:** Zen pokes Jay and Jay pokes Zen; the poke appears as a dark, achievement-style pop-up. (Needs a table.)
+   - **Reminders** for upcoming dates. (Ties into Batch 2 date invitations.)
+   - **On this day:** show the photo uploaded for today's date in past years. (Can reuse the calendar's "On this day" data; signed-in only.)
+4. **"Happybara" virtual pet** (new hotbar slot, perhaps an egg icon): a Tamagotchi-style capybara the two care for together. It persists and keeps running: it has needs (food, water), and they can feed it, play with it, bathe it, and tap it for reactions. Caring for it earns points, which buy food, things for the capybara, and furniture for the house. Zen left the specifics to the builder. (Needs tables and a design pass.)
