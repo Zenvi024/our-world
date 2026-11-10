@@ -1,6 +1,6 @@
 import { h } from '../lib/dom.js';
 import { pixelArt } from '../art/pixel.js';
-import { LILY } from '../art/sprites.js';
+import { LILY, ICON_HOME } from '../art/sprites.js';
 import { createHotbar } from '../components/hotbar.js';
 import { createSettings } from './settings.js';
 
@@ -43,7 +43,21 @@ export function mountWorld(root) {
     h(
       'div',
       { class: 'world' },
-      h('header', { class: 'world-header' }, heading),
+      h(
+        'header',
+        { class: 'world-header' },
+        h(
+          'a',
+          {
+            class: 'btn home-link',
+            href: '#/',
+            'aria-label': 'Back to the title screen',
+            title: 'Back to the title screen',
+          },
+          pixelArt(ICON_HOME),
+        ),
+        heading,
+      ),
       outlet,
       h('footer', { class: 'hud' }, hotbar.el),
     ),

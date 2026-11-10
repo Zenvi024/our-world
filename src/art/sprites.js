@@ -94,3 +94,22 @@ export const ICON_SETTINGS = [
   '....aa....aa....',
   '................',
 ];
+
+export const ICON_HOME = [
+  '................',
+  '.......rr.......',
+  '......rrrr......',
+  '.....rrrrrr.....',
+  '....rrrrrrrr....',
+  '...rrrrrrrrrr...',
+  '..rrrrrrrrrrrr..',
+  '.rrrrrrrrrrrrrr.',
+  '...cccccccccc...',
+  '...cyycccBBBc...',
+  '...cyycccBBBc...',
+  '...ccccccBBBc...',
+  '...ccccccBBBc...',
+  '...eeeeeeBBBe...',
+  '................',
+  '................',
+];

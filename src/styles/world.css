@@ -13,9 +13,25 @@
 }
 
 .world-header {
+  position: relative;
   flex: none;
-  padding: max(14px, env(safe-area-inset-top)) 16px 10px;
+  padding: max(14px, env(safe-area-inset-top)) 64px 10px;
   text-align: center;
+}
+
+/* The little house in the corner leads back to the title screen. */
+.home-link {
+  position: absolute;
+  left: 12px;
+  top: max(8px, env(safe-area-inset-top));
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+}
+
+.home-link .pixel-art {
+  width: 28px;
+  height: 28px;
 }
 
 .world-title {
