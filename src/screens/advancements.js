@@ -6,6 +6,8 @@ import { loadMemberNames } from '../session.js';
 import { ADVANCEMENTS, fetchUnlocks, checkAdvancements } from '../data/advancements.js';
 import { fetchGoals, addGoal, updateGoal, removeGoal, setGoalDone, saveGoalOrder } from '../data/goals.js';
 import { openModal, confirmDialog } from '../components/modal.js';
+import { fetchHearts } from '../data/hearts.js';
+import { createHeartButton } from '../components/heartButton.js';
 
 const monthYear = (date) => `${MONTH_NAMES[parts(date).month - 1]} ${parts(date).year}`;
 const shortDay = (iso) => {
@@ -110,11 +112,12 @@ function openGoalForm({ goal, onSaved, nextOrder }) {
 export function createAdvancements() {
   const goalList = h('div', { class: 'goal-list' });
   const reachedList = h('div', { class: 'goal-list' });
-  const reachedPanel = h('section', { class: 'panel', hidden: true }, h('h2', { class: 'panel-title' }, 'Reached'), reachedList);
+  const reachedPanel = h('section', { class: 'board board--reached', hidden: true }, h('h2', { class: 'board-title' }, 'Reached together'), reachedList);
   const grid = h('div', { class: 'advancement-grid' });
   const status = h('p', { class: 'status status--error', role: 'alert' });
   let goals = [];
   let names = new Map();
+  let hearts = new Map();
 
   const fail = (error) => {
     status.textContent = friendlyError(error);
@@ -122,7 +125,11 @@ export function createAdvancements() {
 
   async function load() {
     try {
-      [goals, names] = await Promise.all([fetchGoals(), loadMemberNames()]);
+      [goals, names, hearts] = await Promise.all([
+        fetchGoals(),
+        loadMemberNames(),
+        fetchHearts('goal').catch(() => new Map()),
+      ]);
       status.textContent = '';
       renderGoals();
     } catch (error) {
@@ -162,6 +169,9 @@ export function createAdvancements() {
     return h(
       'article',
       { class: `goal${done ? ' goal--done' : ''}` },
+      h('span', { class: 'goal-pin', 'aria-hidden': 'true' }),
+      createHeartButton('goal', goal.id, hearts.get(goal.id)),
+      done && h('span', { class: 'goal-stamp', 'aria-hidden': 'true' }, 'Done!'),
       h(
         'div',
         { class: 'goal-main' },
@@ -242,9 +252,9 @@ export function createAdvancements() {
     { class: 'goals-screen' },
     h(
       'section',
-      { class: 'panel' },
-      h('h2', { class: 'panel-title' }, 'Our goals'),
-      h('p', { class: 'hint' }, 'The things we want to do together, in the order we want to do them. Use the arrows to rearrange.'),
+      { class: 'board' },
+      h('h2', { class: 'board-title' }, 'Our goals'),
+      h('p', { class: 'board-hint' }, 'The things we want to do together, in the order we want to do them.'),
       status,
       goalList,
       h(

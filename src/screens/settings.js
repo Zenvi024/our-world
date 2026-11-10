@@ -6,7 +6,7 @@ import {
   signOut,
   getSession,
 } from '../session.js';
-import { isSfxOn, setSfx, isMusicOn, setMusic } from '../lib/sound.js';
+import { isSfxOn, setSfx, getMusicLevel, setMusicLevel, nextTrack, onMusicChange } from '../lib/sound.js';
 import {
   fetchSplash,
   addSplash,
@@ -180,12 +180,25 @@ function splashSection() {
 
 function soundSection() {
   const sfx = h('input', { type: 'checkbox', id: 'sound-sfx', checked: isSfxOn(), onchange: () => setSfx(sfx.checked) });
-  const music = h('input', { type: 'checkbox', id: 'sound-music', checked: isMusicOn(), onchange: () => setMusic(music.checked) });
+  const music = h(
+    'select',
+    { class: 'input', id: 'sound-music', onchange: () => setMusicLevel(Number(music.value)) },
+    ['Off', 'Soft', 'Medium', 'Full'].map((label, level) => h('option', { value: String(level), selected: level === getMusicLevel() }, label)),
+  );
+  // Keep the menu in step with the speaker button in the corner.
+  onMusicChange((level) => {
+    music.value = String(level);
+  });
   return section(
     'Sound',
-    h('p', { class: 'hint' }, 'These choices are remembered on this device.'),
+    h('p', { class: 'hint' }, 'These choices are remembered on this device. The speaker button in the corner changes the music volume too.'),
     h('label', { class: 'check check--row', for: 'sound-sfx' }, sfx, 'Sound effects (button clicks and pop-ups)'),
-    h('label', { class: 'check check--row', for: 'sound-music' }, music, 'Music (a soft music-box tune)'),
+    h(
+      'div',
+      { class: 'field' },
+      h('label', { for: 'sound-music' }, 'Music volume'),
+      h('div', { class: 'input-row' }, music, h('button', { class: 'btn', type: 'button', onclick: nextTrack }, 'Next tune')),
+    ),
   );
 }
 

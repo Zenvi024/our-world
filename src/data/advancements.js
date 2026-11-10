@@ -80,9 +80,11 @@ const CHECKS = {
     if (error) throw error;
     return count > 0;
   },
-  // Letters arrive with the letters milestone.
-  pen_pal: async () => false,
-  message_in_a_bottle: async () => false,
+  pen_pal: async (facts) => (await facts.letters()).some((letter) => letter.sender_id === getUserId()),
+  message_in_a_bottle: async (facts) =>
+    (await facts.letters()).some(
+      (letter) => letter.recipient_id === getUserId() && letter.delivery_mode === 'surprise' && letter.delivered,
+    ),
 };
 
 let checking = false;
@@ -95,7 +97,16 @@ export async function checkAdvancements() {
   try {
     const unlocked = await fetchUnlocks();
     let photoCount = null;
+    let letters = null;
     const facts = {
+      letters: async () => {
+        if (!letters) {
+          const { data, error } = await supabase.rpc('get_letters');
+          if (error) throw error;
+          letters = data;
+        }
+        return letters;
+      },
       photos: async () => {
         if (photoCount === null) {
           const { count, error } = await supabase.from('photos').select('id', { count: 'exact', head: true });

@@ -3,6 +3,7 @@ import './styles/title.css';
 import './styles/world.css';
 import './styles/calendar.css';
 import './styles/charm.css';
+import './styles/cozy.css';
 import { currentRoute, navigate, onRouteChange } from './router.js';
 import { initSession, getSession, onSessionChange } from './session.js';
 import { mountTitle } from './screens/title.js';
@@ -10,7 +11,7 @@ import { mountWorld, isWorldRoute } from './screens/world.js';
 import { installDirtTile } from './art/tiles.js';
 import { installClickSounds, installMusic } from './lib/sound.js';
 import { checkAdvancements } from './data/advancements.js';
-import { showLandingNotices, watchForPokes } from './lib/notices.js';
+import { showLandingNotices, showNewPokes, watchForPokes } from './lib/notices.js';
 import { openChest } from './screens/chest.js';
 
 const root = document.getElementById('app');
@@ -58,6 +59,7 @@ function render() {
   if (!showWorldScreen) {
     showWorldScreen = mountWorld(root);
     checkAdvancements();
+    showNewPokes(); // pokes, a partner feeling low, and new letters
     watchForPokes();
   }
   showWorldScreen(route);

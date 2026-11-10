@@ -4,8 +4,9 @@ import { getSession, signIn } from '../session.js';
 import { cachedSplash, fetchSplash } from '../data/splash.js';
 import { startLandscape } from '../art/landscape.js';
 import { pixelArt } from '../art/pixel.js';
-import { ICON_NOTE, ICON_HEART } from '../art/sprites.js';
-import { isMusicOn, setMusic, onMusicChange, playPoke } from '../lib/sound.js';
+import { ICON_HEART } from '../art/sprites.js';
+import { playPoke } from '../lib/sound.js';
+import { createMusicButton } from '../components/musicButton.js';
 import { loadPartner, sendPoke } from '../data/pokes.js';
 
 const SPLASH_SECONDS = 5;
@@ -139,22 +140,6 @@ function createNotice(message, onClose) {
     ),
   );
   return overlay;
-}
-
-// The corner button that turns the music on and off.
-function createMusicButton() {
-  const button = h(
-    'button',
-    { class: 'btn music-button', type: 'button', onclick: () => setMusic(!isMusicOn()) },
-    pixelArt(ICON_NOTE),
-  );
-  const show = (on) => {
-    button.setAttribute('aria-pressed', String(on));
-    button.setAttribute('aria-label', on ? 'Turn the music off' : 'Turn the music on');
-    button.title = on ? 'Music is on' : 'Music is off';
-  };
-  show(isMusicOn());
-  return { el: button, stop: onMusicChange(show) };
 }
 
 // "Poke Jay": a tiny hello that pops up on the other person's screen.

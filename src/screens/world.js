@@ -7,6 +7,9 @@ import { createCalendar } from './calendar.js';
 import { createAdvancements } from './advancements.js';
 import { createLedger } from './ledger.js';
 import { createXpBar } from '../components/xpBar.js';
+import { createLetters } from './letters.js';
+import { createMusicButton } from '../components/musicButton.js';
+import { createMoodHearts } from '../components/moodHearts.js';
 
 function comingSoon(message) {
   return () =>
@@ -20,10 +23,7 @@ function comingSoon(message) {
 
 const SCREENS = {
   calendar: { title: 'Calendar', create: createCalendar },
-  letters: {
-    title: 'Letters',
-    create: comingSoon('The book and quill is not ready yet. Letters are coming soon.'),
-  },
+  letters: { title: 'Letters', create: createLetters },
   advancements: { title: 'Goals', create: createAdvancements },
   ledger: { title: 'Ledger', create: createLedger },
   settings: { title: 'Settings', create: createSettings },
@@ -56,6 +56,8 @@ export function mountWorld(root) {
           pixelArt(ICON_HOME),
         ),
         heading,
+        createMusicButton().el,
+        createMoodHearts().el,
       ),
       outlet,
       h('footer', { class: 'hud' }, createXpBar(), hotbar.el),

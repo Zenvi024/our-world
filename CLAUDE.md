@@ -389,9 +389,22 @@ These answer the open questions in section 12 and take priority over the working
 - **Sound:** original, synthesized click sounds and pop-up jingles (on by default) and an original music-box loop (off by default; note button on the Play screen). Both have switches in Settings and are remembered per device. There are no audio files.
 - Goals, the ledger, and pokes use `supabase/migration-2.sql`, which Zen runs after `migration.sql`.
 
+### Also done (Milestone 4 and the "make everything cozy" round)
+- **Letters (Milestone 4):** a shelf of received letters (unread ones shimmer and say "New"), an open-book page for reading and writing, three ways to send (now, on a day and time in 12-hour Manila time, or a surprise within 7, 30, or 90 days), a "Letters you sent" list (Drifting…, Arrives …, Delivered, Read, Taken back), and "Take back" before delivery. A pop-up announces a newly arrived letter.
+- **Heart reactions** on goals and letters, and **little replies** (comments) on letters.
+- **Mood hearts** under every screen title: yours on the left (tap to set 0 to 5), your partner's on the right. At 2 hearts or fewer, the other person gets a pop-up.
+- **Cozy look everywhere:** warm paper panels, wooden buttons and hotbar, sandy slots, and a handwriting font (Patrick Hand) for notes. Zen found the gray panels "boxy, robotic, corporate"; keep new screens skeuomorphic and warm.
+- **Ledger as an open book with a quill:** tools (sticky-note balance, "Add an expense," "Settle up") sit beside the book; on wide screens they are on the left and the book opens to two pages. **Settle up accepts a partial amount.**
+- **Goals as notes pinned to a wooden board.**
+- **Music:** three original music-box pieces that take turns, and one speaker button (Play screen and every in-world header) that steps off, soft, medium, full. Settings has the same volume and a "Next tune" button.
+- These use `supabase/migration-3.sql` (moods, goal_hearts, letter_hearts, letter_comments), run after the first two.
+
+### Advice given on a private chat (Zen asked; not built yet)
+Feasible as a later milestone: a messages table, live updates through Supabase Realtime, emoji from the normal keyboard, and photos through the existing photo pipeline. The catch is notifications: without them a message is only seen when the site is open. Push notifications on iPhone need the site added to the Home Screen, permission granted, and a small server function with its own keys. Messages would be private to the two accounts but not end-to-end encrypted. Recommended after the anniversary, starting without push.
+
 ### Still to do, in this order (Zen asked that none of these be forgotten)
-1. **Milestone 4: letters** (book and quill, three delivery modes), so a letter can arrive on November 13.
-2. **Milestone 5: ship** (merge to `main`, keep-alive workflow, QR code, final checklist).
+1. **Milestone 5: ship** (merge to `main`, keep-alive workflow, QR code, final checklist).
+2. **Private chat** (see the advice above), if Zen confirms.
 3. **"Happybara" virtual pet** (new hotbar slot, perhaps an egg icon): a Tamagotchi-style capybara the two care for together. It persists and keeps running: it has needs (food, water), and they can feed it, play with it, bathe it, and tap it for reactions. Caring for it earns points, which buy food, things for the capybara, and furniture for the house. Zen left the specifics to the builder. Needs its own tables (a third SQL file).
 4. **Seasons for the title screen:** a way to switch between spring (current), autumn, and winter versions of the scene.
 5. **Night mode:** a dark version of the scene, and a dark mode for the whole site that changes the palette and overall vibe.

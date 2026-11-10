@@ -8,28 +8,81 @@ import { fetchGoals } from '../data/goals.js';
 import { collectPokes, loadPartner } from '../data/pokes.js';
 import { showToast } from '../components/toast.js';
 import { playPoke } from './sound.js';
-import { ICON_HEART, ICON_FLAG, LILY } from '../art/sprites.js';
+import { ICON_HEART, ICON_FLAG, ICON_LETTERS, LILY } from '../art/sprites.js';
+import { fetchMoods, LOW_HEARTS, MAX_HEARTS } from '../data/moods.js';
+import { fetchLetters } from '../data/letters.js';
 
-const SEEN_KEY = 'our-world.notices-day';
-const POKE_CHECK_MS = 60_000;
+const MOOD_KEY = 'our-world.mood-seen';
+const LETTERS_KEY = 'our-world.letters-seen';
 
-// Shows any pokes that arrived since the last look.
-export async function showNewPokes() {
-  if (!getUserId()) return;
+// Tells you, once per change, when your partner's hearts are running low.
+async function showPartnerMood() {
   try {
-    const pokes = await collectPokes();
-    if (!pokes.length) return;
     const partner = await loadPartner();
-    const name = partner?.name ?? 'Your partner';
+    const mood = partner && (await fetchMoods()).get(partner.id);
+    if (!mood || mood.hearts > LOW_HEARTS) return;
+    if (localStorage.getItem(MOOD_KEY) === mood.updated_at) return;
+    localStorage.setItem(MOOD_KEY, mood.updated_at);
     showToast({
-      header: 'Poke!',
-      text: pokes.length === 1 ? `${name} poked you.` : `${name} poked you ${pokes.length} times.`,
+      header: `${partner.name} could use some love`,
+      text: `Feeling ${mood.hearts} of ${MAX_HEARTS} hearts right now.`,
       icon: ICON_HEART,
       sound: playPoke,
     });
   } catch {
+    // Moods may not be set up yet.
+  }
+}
+
+// Announces letters that have arrived since the last look.
+async function showNewLetters(onOpenLetters) {
+  try {
+    const me = getUserId();
+    const unread = (await fetchLetters()).filter((letter) => letter.recipient_id === me && !letter.read_at);
+    const seen = new Set(JSON.parse(localStorage.getItem(LETTERS_KEY) || '[]'));
+    const fresh = unread.filter((letter) => !seen.has(letter.id));
+    if (!fresh.length) return;
+    localStorage.setItem(LETTERS_KEY, JSON.stringify(unread.map((letter) => letter.id)));
+    showToast({
+      header: fresh.length === 1 ? 'A letter arrived!' : `${fresh.length} letters arrived!`,
+      text: fresh[0].title || 'Tap to read it.',
+      icon: ICON_LETTERS,
+      sound: playPoke,
+      onClick: onOpenLetters,
+    });
+  } catch {
+    // Letters wait for the next check.
+  }
+}
+
+const openLetters = () => {
+  window.location.hash = '#/letters';
+};
+
+const SEEN_KEY = 'our-world.notices-day';
+const POKE_CHECK_MS = 60_000;
+
+// Shows what has arrived since the last look: pokes, a partner whose hearts
+// are low, and new letters.
+export async function showNewPokes() {
+  if (!getUserId()) return;
+  try {
+    const pokes = await collectPokes();
+    if (pokes.length) {
+      const partner = await loadPartner();
+      const name = partner?.name ?? 'Your partner';
+      showToast({
+        header: 'Poke!',
+        text: pokes.length === 1 ? `${name} poked you.` : `${name} poked you ${pokes.length} times.`,
+        icon: ICON_HEART,
+        sound: playPoke,
+      });
+    }
+  } catch {
     // Pokes wait for the next check.
   }
+  await showPartnerMood();
+  await showNewLetters(openLetters);
 }
 
 let pokeTimer = null;
