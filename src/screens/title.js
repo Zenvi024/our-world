@@ -274,6 +274,11 @@ function createNightButton(onSwitch) {
   return button;
 }
 
+// The capybaras have names of their own: Zen's is Dook and Jay's is Boop.
+// (Anyone else's capybara simply carries their display name.)
+const CAPYBARA_NAMES = { zen: 'Dook', jay: 'Boop' };
+const capybaraName = (displayName) => CAPYBARA_NAMES[String(displayName).trim().toLowerCase()] ?? displayName;
+
 // Shows the title screen inside root. Returns a function that cleans it up.
 export function mountTitle(root, { onEnter }) {
   const canvas = h('canvas', { class: 'landscape', 'aria-hidden': 'true' });
@@ -368,7 +373,7 @@ export function mountTitle(root, { onEnter }) {
       const me = getUserId();
       const [members, pet] = await Promise.all([loadMembers(), supabase.from('pet').select('*').eq('id', 1).maybeSingle()]);
       const people = [...members].sort(([a], [b]) => Number(b === me) - Number(a === me)).slice(0, 2);
-      const cast = people.map(([, person], i) => ({ name: person.name, hat: AVATAR_HATS[person.avatar] ?? (i ? 'hat_blossom' : 'hat_orange') }));
+      const cast = people.map(([, person], i) => ({ name: capybaraName(person.name), hat: AVATAR_HATS[person.avatar] ?? (i ? 'hat_blossom' : 'hat_orange') }));
       while (cast.length < 2) cast.push({ name: '', hat: cast.length ? 'hat_blossom' : 'hat_orange' });
       cast.push({ name: pet.data?.name ?? 'Happybara', hat: pet.data?.wearing, accessory: pet.data?.accessory, baby: true });
       tags.replaceChildren(...cast.map((member) => h('span', { class: `name-tag${member.baby ? ' name-tag--pet' : ''}` }, member.name)));

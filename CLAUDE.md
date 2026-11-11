@@ -445,7 +445,7 @@ Zen wants to play Happybara with Jay "for many months," so the game was made muc
 - **Focus timer** (on the Happybara screen): 25 minutes on the database's clock, so it keeps going when the site is closed. Finishing pays 8 coins and 2 love, up to 6 paid sessions a day each. It finishes itself from any screen and shows a pop-up. It cannot tell whether you really focused; it only requires the 25 minutes to pass.
 - **Tricks** are learned at levels 3, 6, 10, and 15 and show when the pet is tapped.
 - **Angry cats** replaced the hunger meter: five cats on the right of the meters, happy by default; tap to turn 1 to 5 of them angry and red (`moods.angry`). The other person gets a lighthearted pop-up for each change, and another when the cats are happy again. The old `hunger` column is no longer used.
-- **Title screen:** three capybaras with name tags. Zen's and Jay's wear the hat of the avatar each chose in Settings; the small one is Happybara in whatever it is wearing.
+- **Title screen:** three capybaras with name tags. Zen's and Jay's wear the hat of the avatar each chose in Settings; the small one is Happybara in whatever it is wearing. The two big ones are named **Dook** (Zen's) and **Boop** (Jay's); the tags are matched by display name in `src/screens/title.js`, so if a display name changes, update `CAPYBARA_NAMES` there.
 - **Our Reviews** (hotbar star; all nine slots are now used): cafés, restaurants, movies, shows, places. Each review has a name, where, a date, and separate 1-to-5 stars and words from each person, with filters, "Best first," and an average. Tables `reviews` and `review_ratings`.
 - **Fixed:** the loader on the letter shelf wrapped and overflowed; night-mode menus lost their arrow.
 
