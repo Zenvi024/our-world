@@ -3,12 +3,12 @@ import { getUserId } from '../session.js';
 import { announce } from '../lib/live.js';
 
 // The two meters each of you sets for yourself, from 0 to 5: hearts (how you
-// are feeling) and hunger (how well fed you are). The same row also remembers
+// are feeling) and angry cats (how annoyed you are). The same row also remembers
 // whether you have gone to bed.
 export const MAX_METER = 5;
 export const LOW_METER = 2; // at or below this, the other person is told
 
-// A Map of member id -> { hearts, hunger, asleep_since, updated_at }.
+// A Map of member id -> { hearts, angry, asleep_since, updated_at }.
 export async function fetchMoods() {
   const { data, error } = await supabase.from('moods').select('*');
   if (error) throw error;
@@ -26,7 +26,7 @@ async function save(fields) {
   announce('moods');
 }
 
-// Sets one of my meters: field is 'hearts' or 'hunger'.
+// Sets one of my meters: field is 'hearts' or 'angry'.
 export const setMeter = (field, value) => save({ [field]: value, updated_at: new Date().toISOString() });
 
 // Asleep means "said good night within the last 12 hours and has not said

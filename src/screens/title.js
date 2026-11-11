@@ -1,6 +1,7 @@
 import { h, friendlyError } from '../lib/dom.js';
-import { isConfigured } from '../supabase.js';
-import { getSession, signIn } from '../session.js';
+import { isConfigured, supabase } from '../supabase.js';
+import { getSession, signIn, loadMembers } from '../session.js';
+import { AVATAR_HATS } from '../art/outfits.js';
 import { cachedSplash, fetchSplash } from '../data/splash.js';
 import { startLandscape } from '../art/landscape.js';
 import { pixelArt } from '../art/pixel.js';
@@ -337,8 +338,35 @@ export function mountTitle(root, { onEnter }) {
   );
 
   root.replaceChildren(screen);
-  const scene = startLandscape(canvas);
+  // Name tags float above the capybaras: the two of you, and your pet.
+  const tags = h('div', { class: 'name-tags', 'aria-hidden': 'true' });
+  canvas.after(tags);
+  const scene = startLandscape(canvas, {
+    onMove(spots) {
+      spots.forEach((spot, i) => {
+        const tag = tags.children[i];
+        if (tag) tag.style.transform = `translate(${Math.round(spot.x)}px, ${Math.round(spot.y)}px) translate(-50%, -100%)`;
+      });
+    },
+  });
   const stops = [];
+
+  // Who is in the scene: each of you wears your avatar's hat, and the little
+  // one wears whatever Happybara has on.
+  async function gatherCast() {
+    try {
+      const me = getUserId();
+      const [members, pet] = await Promise.all([loadMembers(), supabase.from('pet').select('*').eq('id', 1).maybeSingle()]);
+      const people = [...members].sort(([a], [b]) => Number(b === me) - Number(a === me)).slice(0, 2);
+      const cast = people.map(([, person], i) => ({ name: person.name, hat: AVATAR_HATS[person.avatar] ?? (i ? 'hat_blossom' : 'hat_orange') }));
+      while (cast.length < 2) cast.push({ name: '', hat: cast.length ? 'hat_blossom' : 'hat_orange' });
+      cast.push({ name: pet.data?.name ?? 'Happybara', hat: pet.data?.wearing, accessory: pet.data?.accessory, baby: true });
+      tags.replaceChildren(...cast.map((member) => h('span', { class: `name-tag${member.baby ? ' name-tag--pet' : ''}` }, member.name)));
+      scene.setCast(cast);
+    } catch {
+      // The scene keeps its three unnamed capybaras.
+    }
+  }
 
   // The campfire burns on days you both visit, and roars while you are both here.
   let fireState = { lit: false, streak: 0 };
@@ -353,7 +381,8 @@ export function mountTitle(root, { onEnter }) {
   if (signedIn) {
     const greetings = createGreetings(scene);
     greetSlot.replaceWith(greetings.el);
-    stops.push(greetings.stop, onLive('visits', tendFire), onLive('presence', tendFire));
+    stops.push(greetings.stop, onLive('visits', tendFire), onLive('presence', tendFire), onLive('pet', gatherCast), onLive('moods', gatherCast));
+    gatherCast();
     recordVisit().catch(() => {}).then(tendFire);
   }
 

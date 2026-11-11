@@ -231,7 +231,9 @@
   gap: 8px;
 }
 
-.chest-shelf > .loader {
+/* Inside a grid (the letter shelf, the list chests) the loader takes the
+   whole row, so its line of text never wraps into a narrow column. */
+.loader {
   grid-column: 1 / -1;
 }
 

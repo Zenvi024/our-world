@@ -202,3 +202,21 @@
 [data-theme='night'] .shelf-empty {
   filter: brightness(0.84) saturate(0.92);
 }
+
+[data-theme='night'] .pet-tab:not([aria-selected='true'], .pet-tab--locked) {
+  background: #454a70;
+  box-shadow:
+    inset 2px 2px 0 #6b719c,
+    inset -2px -2px 0 #292c47;
+}
+
+[data-theme='night'] .pet-tab--locked {
+  background: #2a2d47;
+  box-shadow:
+    inset 2px 2px 0 #3b3f60,
+    inset -2px -2px 0 #1a1c30;
+}
+
+[data-theme='night'] .pet-locked {
+  color: var(--night-soft);
+}

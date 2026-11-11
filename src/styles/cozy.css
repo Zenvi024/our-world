@@ -110,7 +110,7 @@
   background: #7d7d7d;
 }
 
-/* ---------- Health and hunger, just above the XP bar ----------
+/* ---------- Hearts and cats, just above the XP bar ----------
    Hearts on the left, drumsticks on the right, and a name in the middle that
    says whose they are. The two of you take turns. */
 .meters {
@@ -125,8 +125,35 @@
   display: flex;
 }
 
-.meter--hunger {
-  flex-direction: row-reverse; /* hunger fills from the right, like the hotbar side */
+.meter--cats {
+  flex-direction: row-reverse; /* cats get angry from the right, mirroring the hearts */
+}
+
+/* Each cat has two faces; only one shows. */
+.meter-cat .cat-angry,
+.meter-cat--angry .cat-happy {
+  display: none;
+}
+
+.meter-cat--angry .cat-angry {
+  display: inline-flex;
+  animation: cat-huff 0.5s steps(2) 2;
+}
+
+.meter-cat span {
+  display: inline-flex;
+}
+
+@keyframes cat-huff {
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meter-cat--angry .cat-angry {
+    animation: none;
+  }
 }
 
 .meter-icon {

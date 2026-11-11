@@ -72,3 +72,7 @@ export function sameDayInOtherYears(date, fromYear, toYear) {
   }
   return dates;
 }
+
+// The hour of the day in Manila, from 0 to 23.
+export const manilaHour = () =>
+  Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Manila', hour: 'numeric', hour12: false }).format(new Date())) % 24;

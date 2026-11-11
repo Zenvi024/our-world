@@ -477,3 +477,42 @@ export const ICON_COIN = [
   '................',
   '................',
 ];
+
+// The cats of the annoyance meter: content, and not content at all.
+export const ICON_CAT_HAPPY = [
+  '................',
+  '..AA........AA..',
+  '..AAA......AAA..',
+  '..AAAAAAAAAAAA..',
+  '.AAAAAAAAAAAAAA.',
+  '.AAAAAAAAAAAAAA.',
+  '.AAkkAAAAAAkkAA.',
+  '.AkAAkAAAAkAAkA.',
+  '.AAAAAAppAAAAAA.',
+  '.AAAAYYYYYYAAAA.',
+  '.AAAAYkYYkYAAAA.',
+  '..AAAAYkkYAAAA..',
+  '...AAAAAAAAAA...',
+  '....AAAAAAAA....',
+  '................',
+  '................',
+];
+
+export const ICON_CAT_ANGRY = [
+  '................',
+  '..rr........rr..',
+  '..rrr......rrr..',
+  '..rrrrrrrrrrrr..',
+  '.rrrrrrrrrrrrrr.',
+  '.rkkrrrrrrrrkkr.',
+  '.rrrkkrrrrkkrrr.',
+  '.rrrwkrrrrkwrrr.',
+  '.rrrrrrpprrrrrr.',
+  '.rrrrrrrrrrrrrr.',
+  '.rrrrrkkkkrrrrr.',
+  '..rrrkrrrrkrrr..',
+  '...rrrrrrrrrr...',
+  '....rrrrrrrr....',
+  '................',
+  '................',
+];

@@ -1,6 +1,6 @@
 import { h } from '../lib/dom.js';
 import { pixelArt } from '../art/pixel.js';
-import { ICON_HEART, ICON_DRUMSTICK } from '../art/sprites.js';
+import { ICON_HEART, ICON_CAT_HAPPY, ICON_CAT_ANGRY } from '../art/sprites.js';
 import { getUserId, loadMembers } from '../session.js';
 import { onLive } from '../lib/live.js';
 import { avatarArt } from './avatar.js';
@@ -11,8 +11,9 @@ const TURN_MS = 6000; // how long each person's meters stay on screen
 const HOLD_MS = 15000; // after you set yours, they stay a little longer
 const REFRESH_MS = 60000;
 
-// Health and hunger, above the XP bar: hearts on the left, drumsticks on the
-// right, and the name of whose they are in the middle. The display takes
+// Hearts and cats, above the XP bar: hearts on the left (how you feel), five
+// cats on the right (how annoyed you are: happy cats turn into angry red
+// ones), and the name of whose they are in the middle. The display takes
 // turns between the two of you; tap the name to switch right away. You can
 // only set your own.
 export function createMeters({ onLowHearts } = {}) {
@@ -22,16 +23,22 @@ export function createMeters({ onLowHearts } = {}) {
   let showing = 0;
   let turnTimer = null;
 
-  const row = (field, sprite, label) =>
-    Array.from({ length: MAX_METER }, (_, i) =>
-      h(
-        'button',
-        { class: 'meter-icon', type: 'button', 'data-quiet': 'true', 'aria-label': `${label}: ${i + 1} of ${MAX_METER}`, onclick: () => choose(field, i + 1) },
-        pixelArt(sprite),
-      ),
-    );
-  const hearts = row('hearts', ICON_HEART, 'My hearts');
-  const hunger = row('hunger', ICON_DRUMSTICK, 'My hunger');
+  const hearts = Array.from({ length: MAX_METER }, (_, i) =>
+    h(
+      'button',
+      { class: 'meter-icon', type: 'button', 'data-quiet': 'true', 'aria-label': `My hearts: ${i + 1} of ${MAX_METER}`, onclick: () => choose('hearts', i + 1) },
+      pixelArt(ICON_HEART),
+    ),
+  );
+  // Each cat has two faces; the angry one shows when it is counted.
+  const cats = Array.from({ length: MAX_METER }, (_, i) =>
+    h(
+      'button',
+      { class: 'meter-icon meter-cat', type: 'button', 'data-quiet': 'true', 'aria-label': `Angry cats: ${i + 1} of ${MAX_METER}`, onclick: () => choose('angry', i + 1) },
+      h('span', { class: 'cat-happy' }, pixelArt(ICON_CAT_HAPPY)),
+      h('span', { class: 'cat-angry' }, pixelArt(ICON_CAT_ANGRY)),
+    ),
+  );
   const nameText = h('span');
   const face = h('span', { class: 'meter-face' });
   const name = h('button', { class: 'meter-name', type: 'button', 'data-quiet': 'true', onclick: () => turn(true) }, face, nameText);
@@ -40,26 +47,28 @@ export function createMeters({ onLowHearts } = {}) {
     { class: 'meters' },
     h('div', { class: 'meter meter--hearts' }, hearts),
     name,
-    h('div', { class: 'meter meter--hunger' }, hunger),
+    h('div', { class: 'meter meter--cats' }, cats),
   );
 
   function paint() {
     const person = people[showing];
     const mine = person.id === me;
     const mood = moods.get(person.id);
-    const fill = (icons, value) =>
-      icons.forEach((icon, i) => {
-        icon.classList.toggle('meter-icon--empty', value == null || i >= value);
-        icon.disabled = !mine;
-      });
-    fill(hearts, mood?.hearts);
-    fill(hunger, mood?.hunger);
+    hearts.forEach((icon, i) => {
+      icon.classList.toggle('meter-icon--empty', mood?.hearts == null || i >= mood.hearts);
+      icon.disabled = !mine;
+    });
+    const angry = mood?.angry ?? 0;
+    cats.forEach((cat, i) => {
+      cat.classList.toggle('meter-cat--angry', i < angry);
+      cat.disabled = !mine;
+    });
     const asleep = isAsleep(mood);
     nameText.textContent = asleep ? `${person.name} zZ` : person.name;
     face.replaceChildren(avatarArt(person.avatar));
     name.setAttribute(
       'aria-label',
-      `Showing ${person.name}${asleep ? ', asleep' : ''}: ${mood?.hearts ?? 'no'} of ${MAX_METER} hearts, ${mood?.hunger ?? 'no'} of ${MAX_METER} hunger. Tap to switch.`,
+      `Showing ${person.name}${asleep ? ', asleep' : ''}: ${mood?.hearts ?? 'no'} of ${MAX_METER} hearts, ${angry} of ${MAX_METER} angry cats. Tap to switch.`,
     );
     el.classList.toggle('meters--theirs', !mine);
   }
@@ -77,7 +86,7 @@ export function createMeters({ onLowHearts } = {}) {
   }
 
   async function choose(field, value) {
-    const mood = moods.get(me) ?? { hearts: null, hunger: null };
+    const mood = moods.get(me) ?? { hearts: null, angry: 0 };
     // Tapping the icon you are already on takes one away, so zero is reachable.
     const next = mood[field] === value ? value - 1 : value;
     const before = mood[field];

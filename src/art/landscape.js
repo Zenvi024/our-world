@@ -1,3 +1,4 @@
+import { CAPYBARA_BODY, BABY_BODY, drawCapybara, hatRise } from './outfits.js';
 import { drawSprite } from './pixel.js';
 import { LILY } from './sprites.js';
 
@@ -22,49 +23,12 @@ const PETAL = ['#ffd3e4', '#f7a8c9', '#ffffff'];
 const BLOOMS = ['#ff8fb8', '#ffd83d', '#ffffff', '#f7a8c9'];
 
 // The capybaras are modeled on the one at home: cream and round, with a
-// brown snout, tiny ears, and something balanced on its head.
-const CAPYBARA_COLORS = {
-  C: '#f6e6a6', // cream coat
-  c: '#e2cc80', // coat shade
-  S: '#b08556', // snout
-  N: '#7d5a36', // nose
-  E: '#a37a4f', // ears
-  P: '#d2b06e', // paws
-  F: '#a37a4f', // feet
-  k: '#2b2a26', // eyes
-  O: '#f28c1e', // orange
-  o: '#ffb648', // orange shine
-  p: '#f7a8c9', // blossom
-  w: '#ffe3ee', // blossom center
-};
-
-const CAPYBARA_BODY = [
-  '.EE.CCCCC.EE.',
-  '.EECCCCCCCEE.',
-  '..CCCCCCCCC..',
-  '.CCCCCCCCCCC.',
-  '.CkCCSSSCCkC.',
-  '.CCCSSSSSCCC.',
-  '.CCCSSNSSCCC.',
-  '.CCCCSSSCCCC.',
-  '.CCCCCCCCCCC.',
-  '.CCPCCCCCPCC.',
-  '.cCCCCCCCCCc.',
-  '..cCCCCCCCc..',
-  '..FF.....FF..',
-];
-const CAPYBARA_HATS = [
-  ['.....OoO.....', '.....OOO.....'], // an orange
-  ['......p......', '.....pwp.....'], // a cherry blossom
-];
-const CAPYBARAS = CAPYBARA_HATS.map((hat) => [...hat, ...CAPYBARA_BODY]);
-const CAPYBARA_WIDTH = CAPYBARA_BODY[0].length;
-const CAPYBARA_HEIGHT = CAPYBARAS[0].length;
+// brown snout, tiny ears, and something balanced on its head. Their sprites
+// and outfits live in outfits.js; the third, smaller one is Happybara.
+const DEFAULT_CAST = [{ hat: 'hat_orange' }, { hat: 'hat_blossom' }, { baby: true }];
+const CAST_SPOTS = [0.16, 0.74, 0.46];
 const HOP_TICKS = 7;
 const flip = (rows) => rows.map((row) => [...row].reverse().join(''));
-
-// The same capybara lives in the pet's room.
-export { CAPYBARA_BODY, CAPYBARA_COLORS };
 const LILY_FLIPPED = flip(LILY);
 
 // A repeatable "random" number from 0 to 1 for any pixel, so the texture
@@ -543,15 +507,21 @@ function drawPetals(ctx, width, horizon, seconds) {
 }
 
 // Capybaras face you and get around in little hops, resting in between.
-function createCapybaras(width) {
-  return [0.16, 0.74].map((spot, i) => ({
-    x: width * spot,
-    direction: i % 2 ? -1 : 1,
-    resting: 4 + i * 9,
-    hop: 0,
-    seed: i + 1,
-    sprite: CAPYBARAS[i % CAPYBARAS.length],
-  }));
+function createCapybaras(width, cast) {
+  return cast.map((member, i) => {
+    const body = member.baby ? BABY_BODY : CAPYBARA_BODY;
+    return {
+      ...member,
+      w: body[0].length,
+      h: body.length,
+      x: width * CAST_SPOTS[i % CAST_SPOTS.length],
+      direction: i % 2 ? -1 : 1,
+      resting: 4 + i * 9,
+      hop: 0,
+      seed: i + 1,
+      span: width,
+    };
+  });
 }
 
 function moveCapybaras(herd, width, tick) {
@@ -561,9 +531,9 @@ function moveCapybaras(herd, width, tick) {
       continue;
     }
     capybara.hop += 1;
-    capybara.x += capybara.direction * 0.7;
+    capybara.x += capybara.direction * (capybara.baby ? 0.55 : 0.7);
     if (capybara.x < 2) capybara.direction = 1;
-    if (capybara.x > width - CAPYBARA_WIDTH - 2) capybara.direction = -1;
+    if (capybara.x > width - capybara.w - 2) capybara.direction = -1;
     if (capybara.hop >= HOP_TICKS) {
       // Landed: take a breath, sometimes a long one, sometimes turn around.
       capybara.hop = 0;
@@ -574,25 +544,32 @@ function moveCapybaras(herd, width, tick) {
   }
 }
 
+// Where a capybara's body is right now (top-left corner, in canvas pixels).
+function capybaraSpot(capybara, levels) {
+  const x = Math.round(capybara.x);
+  const lift = Math.round(Math.sin((Math.PI * capybara.hop) / HOP_TICKS) * (capybara.baby ? 3 : 4));
+  return { x, y: groundAt(levels, x + capybara.w / 2) - capybara.h - lift };
+}
+
 function drawCapybaras(ctx, herd, levels) {
   for (const capybara of herd) {
-    const x = Math.round(capybara.x);
-    const lift = Math.round(Math.sin((Math.PI * capybara.hop) / HOP_TICKS) * 4);
-    const y = groundAt(levels, x + CAPYBARA_WIDTH / 2) - CAPYBARA_HEIGHT - lift;
-    drawSprite(ctx, capybara.sprite, x, y, CAPYBARA_COLORS);
+    const { x, y } = capybaraSpot(capybara, levels);
+    drawCapybara(ctx, x, y, capybara);
   }
 }
 
 // Draws the scene into the canvas and keeps it gently alive.
 // Returns controls: stop(), tap(clientX, clientY), setCampfire({ lit, roaring }),
-// and setSleepers(count).
-export function startLandscape(canvas) {
+// setSleepers(count), setCast(cast), and refresh(). `onMove` is told where
+// each capybara's head is (in CSS pixels) so name tags can follow them.
+export function startLandscape(canvas, { onMove } = {}) {
   const ctx = canvas.getContext('2d');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let sky;
   let front;
   let levels = [];
   let herd = [];
+  let cast = DEFAULT_CAST;
   let hearts = []; // little hearts that float up when a capybara is tapped
   let chimney = { x: 0, y: 0 };
   let campfire = { x: 0, y: 0 };
@@ -628,6 +605,12 @@ export function startLandscape(canvas) {
     }
     ctx.globalAlpha = 1;
     drawPetals(ctx, canvas.width, horizon, seconds);
+    onMove?.(
+      herd.map((capybara) => {
+        const { x, y } = capybaraSpot(capybara, levels);
+        return { name: capybara.name, x: (x + capybara.w / 2) * scale, y: (y - hatRise(capybara.hat)) * scale };
+      }),
+    );
   }
 
   function build() {
@@ -689,7 +672,7 @@ export function startLandscape(canvas) {
       if (phase !== 'dawn') lightWindows(frontCtx, houseX, yardY);
     }
 
-    if (!herd.length || herd[0].span !== width) herd = createCapybaras(width).map((capybara) => ({ ...capybara, span: width }));
+    if (!herd.length || herd[0].span !== width) herd = createCapybaras(width, cast);
     paint();
   }
 
@@ -720,11 +703,11 @@ export function startLandscape(canvas) {
       const x = (clientX - box.left) / scale;
       const y = (clientY - box.top) / scale;
       for (const capybara of herd) {
-        const top = groundAt(levels, capybara.x + CAPYBARA_WIDTH / 2) - CAPYBARA_HEIGHT;
-        if (x >= capybara.x - 3 && x <= capybara.x + CAPYBARA_WIDTH + 3 && y >= top - 6 && y <= top + CAPYBARA_HEIGHT + 4) {
+        const spot = capybaraSpot({ ...capybara, hop: 0 }, levels);
+        if (x >= capybara.x - 3 && x <= capybara.x + capybara.w + 3 && y >= spot.y - 8 && y <= spot.y + capybara.h + 4) {
           capybara.resting = 0;
           capybara.hop = 1;
-          hearts.push({ x: capybara.x + 4, y: top - 4, age: 0 });
+          hearts.push({ x: capybara.x + capybara.w / 2 - 2, y: spot.y - 4 - hatRise(capybara.hat), age: 0 });
           if (reduceMotion) paint();
           return 'capybara';
         }
@@ -735,6 +718,14 @@ export function startLandscape(canvas) {
     setCampfire(state) {
       fire = { ...fire, ...state };
       if (reduceMotion) paint();
+    },
+    // Who is in the scene: [{ name, hat, accessory, baby }], in the order
+    // first person, second person, pet. Positions are kept where possible.
+    setCast(next) {
+      cast = next;
+      const fresh = createCapybaras(canvas.width, cast);
+      herd = fresh.map((capybara, i) => (herd[i] ? { ...capybara, x: herd[i].x, direction: herd[i].direction } : capybara));
+      paint();
     },
     // Redraws the whole scene (for example, when night mode is switched).
     refresh: () => build(),
