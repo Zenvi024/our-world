@@ -8,7 +8,9 @@ import { fetchGoals } from '../data/goals.js';
 import { collectPokes, loadPartner, POKES } from '../data/pokes.js';
 import { fetchSeals } from '../data/letters.js';
 import { fetchAnswers } from '../data/questions.js';
-import { ICON_SIGN } from '../art/sprites.js';
+import { ICON_SIGN, ICON_EGG } from '../art/sprites.js';
+import { supabase } from '../supabase.js';
+import { NEEDS, needLevel } from '../data/pet.js';
 import { showToast } from '../components/toast.js';
 import { playPoke } from './sound.js';
 import { ICON_HEART, ICON_MAP, ICON_LETTERS, ICON_DRUMSTICK, LILY } from '../art/sprites.js';
@@ -74,6 +76,34 @@ async function showNewLetters(onOpenLetters) {
   }
 }
 
+const PET_KEY = 'our-world.pet-told';
+const PET_QUIET_MS = 4 * 3_600_000;
+const PET_LOW = 20;
+const PET_WORDS = { hunger: 'is hungry', thirst: 'is thirsty', fun: 'is bored', clean: 'needs a bath' };
+
+// Tells you when Happybara needs something, at most once every few hours.
+async function showPetNeeds() {
+  try {
+    if (window.location.hash === '#/pet') return;
+    if (Date.now() - Number(localStorage.getItem(PET_KEY) || 0) < PET_QUIET_MS) return;
+    const { data: pet } = await supabase.from('pet').select('*').eq('id', 1).maybeSingle();
+    if (!pet) return;
+    const lowest = Object.keys(NEEDS).sort((a, b) => needLevel(pet, a) - needLevel(pet, b))[0];
+    if (needLevel(pet, lowest) >= PET_LOW) return;
+    localStorage.setItem(PET_KEY, String(Date.now()));
+    showToast({
+      header: `${pet.name} ${PET_WORDS[lowest]}`,
+      text: 'Tap to visit.',
+      icon: ICON_EGG,
+      onClick: () => {
+        window.location.hash = '#/pet';
+      },
+    });
+  } catch {
+    // The pet may not have moved in yet.
+  }
+}
+
 const openLetters = () => {
   window.location.hash = '#/letters';
 };
@@ -105,6 +135,7 @@ export async function showNewPokes() {
   }
   await showPartnerMood();
   await showNewLetters(openLetters);
+  await showPetNeeds();
 }
 
 // When your own hearts run low, points you to a letter saved for such a moment.

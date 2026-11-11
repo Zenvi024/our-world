@@ -5,6 +5,8 @@ import './styles/calendar.css';
 import './styles/charm.css';
 import './styles/cozy.css';
 import './styles/life.css';
+import './styles/pet.css';
+import './styles/night.css';
 import { currentRoute, navigate, onRouteChange } from './router.js';
 import { initSession, getSession, onSessionChange } from './session.js';
 import { mountTitle } from './screens/title.js';
@@ -16,6 +18,7 @@ import { showLandingNotices, showNewPokes, watchForPokes } from './lib/notices.j
 import { openChest } from './screens/chest.js';
 import { startLive, stopLive, onLive } from './lib/live.js';
 import { recordVisit } from './data/visits.js';
+import { installTheme } from './lib/theme.js';
 
 const root = document.getElementById('app');
 const HOME = 'calendar';
@@ -69,6 +72,7 @@ function render() {
   showWorldScreen(route);
 }
 
+installTheme();
 installDirtTile();
 installClickSounds();
 installMusic();

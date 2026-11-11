@@ -62,6 +62,9 @@ const CAPYBARA_WIDTH = CAPYBARA_BODY[0].length;
 const CAPYBARA_HEIGHT = CAPYBARAS[0].length;
 const HOP_TICKS = 7;
 const flip = (rows) => rows.map((row) => [...row].reverse().join(''));
+
+// The same capybara lives in the pet's room.
+export { CAPYBARA_BODY, CAPYBARA_COLORS };
 const LILY_FLIPPED = flip(LILY);
 
 // A repeatable "random" number from 0 to 1 for any pixel, so the texture
@@ -103,6 +106,8 @@ const LAND_TINT = {
 };
 
 function skyPhase() {
+  // Night mode turns the scene to night whatever the hour.
+  if (document.documentElement.dataset.theme === 'night') return 'night';
   const hour =
     Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Manila', hour: 'numeric', hour12: false }).format(new Date())) % 24;
   if (hour >= 19 || hour < 5) return 'night';
@@ -731,6 +736,8 @@ export function startLandscape(canvas) {
       fire = { ...fire, ...state };
       if (reduceMotion) paint();
     },
+    // Redraws the whole scene (for example, when night mode is switched).
+    refresh: () => build(),
     setSleepers(count) {
       sleepers = count;
       if (reduceMotion) paint();

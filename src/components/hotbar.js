@@ -7,6 +7,7 @@ import {
   ICON_EMERALD,
   ICON_CHEST,
   ICON_SIGN,
+  ICON_EGG,
   ICON_SETTINGS,
 } from '../art/sprites.js';
 
@@ -18,7 +19,7 @@ const SLOTS = [
   { route: 'ledger', label: 'Ledger', icon: ICON_EMERALD },
   { route: 'lists', label: 'Lists', icon: ICON_CHEST },
   { route: 'question', label: 'Question of the Day', icon: ICON_SIGN },
-  null,
+  { route: 'pet', label: 'Happybara', icon: ICON_EGG },
   null,
   { route: 'settings', label: 'Settings', icon: ICON_SETTINGS },
 ];

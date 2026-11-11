@@ -1,10 +1,10 @@
 import { supabase } from '../supabase.js';
 import { getUserId, loadMembers } from '../session.js';
 import { announce } from '../lib/live.js';
-import { ICON_HEART, ICON_DRUMSTICK, ICON_WATER, ICON_BED } from '../art/sprites.js';
+import { ICON_HEART, ICON_DRUMSTICK, ICON_WATER, ICON_BED, ICON_SUN } from '../art/sprites.js';
 
-// The little messages you can send with one tap. The first six are offered
-// in the menu; the last two are sent by the bed button.
+// The little messages you can send with one tap, in the "Send…" menu. Good
+// night and good morning also tuck you in and wake you up (see moods).
 export const POKES = {
   poke: { label: 'Poke', says: (name) => `${name} poked you.`, icon: ICON_HEART },
   hug: { label: 'Hug', says: (name) => `${name} sent you a hug.`, icon: ICON_HEART },
@@ -12,10 +12,10 @@ export const POKES = {
   miss_you: { label: 'Miss you', says: (name) => `${name} misses you.`, icon: ICON_HEART },
   eat: { label: 'Eat na', says: (name) => `${name} says: eat na!`, icon: ICON_DRUMSTICK },
   water: { label: 'Drink your water', says: (name) => `${name} says: drink your water!`, icon: ICON_WATER },
-  good_night: { says: (name) => `${name} went to bed. Good night!`, icon: ICON_BED },
-  good_morning: { says: (name) => `${name} is awake. Good morning!`, icon: ICON_BED },
+  good_night: { label: 'Good night', says: (name) => `${name} is going to bed. Sweet dreams!`, icon: ICON_BED },
+  good_morning: { label: 'Good morning', says: (name) => `${name} is awake. Good morning!`, icon: ICON_SUN },
 };
-export const POKE_MENU = ['poke', 'hug', 'kiss', 'miss_you', 'eat', 'water'];
+export const POKE_MENU = ['poke', 'hug', 'kiss', 'miss_you', 'eat', 'water', 'good_morning', 'good_night'];
 
 // The other member: { id, name, avatar }.
 export async function loadPartner() {

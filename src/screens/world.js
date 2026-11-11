@@ -12,6 +12,7 @@ import { createMusicButton } from '../components/musicButton.js';
 import { createMeters } from '../components/meters.js';
 import { createLists } from './lists.js';
 import { createQuestion } from './question.js';
+import { createPet } from './pet.js';
 import { onLive } from '../lib/live.js';
 import { suggestOpenWhen } from '../lib/notices.js';
 
@@ -22,6 +23,7 @@ const SCREENS = {
   ledger: { title: 'Ledger', create: createLedger, live: 'ledger' },
   lists: { title: 'Lists', create: createLists, live: 'lists' },
   question: { title: 'Question', create: createQuestion, live: 'question' },
+  pet: { title: 'Happybara', create: createPet }, // keeps itself up to date
   settings: { title: 'Settings', create: createSettings },
 };
 

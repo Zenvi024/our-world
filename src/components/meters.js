@@ -4,7 +4,7 @@ import { ICON_HEART, ICON_DRUMSTICK } from '../art/sprites.js';
 import { getUserId, loadMembers } from '../session.js';
 import { onLive } from '../lib/live.js';
 import { avatarArt } from './avatar.js';
-import { fetchMoods, setMeter, MAX_METER } from '../data/moods.js';
+import { fetchMoods, setMeter, MAX_METER, isAsleep } from '../data/moods.js';
 import { playClick } from '../lib/sound.js';
 
 const TURN_MS = 6000; // how long each person's meters stay on screen
@@ -54,7 +54,7 @@ export function createMeters({ onLowHearts } = {}) {
       });
     fill(hearts, mood?.hearts);
     fill(hunger, mood?.hunger);
-    const asleep = Boolean(mood?.asleep_since);
+    const asleep = isAsleep(mood);
     nameText.textContent = asleep ? `${person.name} zZ` : person.name;
     face.replaceChildren(avatarArt(person.avatar));
     name.setAttribute(

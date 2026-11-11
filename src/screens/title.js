@@ -4,7 +4,7 @@ import { getSession, signIn } from '../session.js';
 import { cachedSplash, fetchSplash } from '../data/splash.js';
 import { startLandscape } from '../art/landscape.js';
 import { pixelArt } from '../art/pixel.js';
-import { ICON_HEART, ICON_BED, LILY } from '../art/sprites.js';
+import { ICON_HEART, ICON_MOON, ICON_SUN, LILY } from '../art/sprites.js';
 import { playPoke, playDone, playPop } from '../lib/sound.js';
 import { createMusicButton } from '../components/musicButton.js';
 import { openModal } from '../components/modal.js';
@@ -13,7 +13,8 @@ import { plural } from '../lib/dom.js';
 import { onLive, isPartnerOnline } from '../lib/live.js';
 import { getUserId } from '../session.js';
 import { loadPartner, sendPoke, POKES, POKE_MENU } from '../data/pokes.js';
-import { fetchMoods, setAsleep } from '../data/moods.js';
+import { fetchMoods, setAsleep, isAsleep } from '../data/moods.js';
+import { isNight, setNight } from '../lib/theme.js';
 import { recordVisit, campfireState } from '../data/visits.js';
 
 const SPLASH_SECONDS = 5;
@@ -149,16 +150,15 @@ function createNotice(message, onClose) {
   return overlay;
 }
 
-// The row under Play: send a little something, and say good night.
+// The row under Play: send a little something, and switch night mode.
 function createGreetings(scene) {
   const sendLabel = h('span', null, 'Send…');
   const send = h('button', { class: 'btn greet-button', type: 'button' }, pixelArt(ICON_HEART), sendLabel);
-  const bedLabel = h('span', null, 'Good night');
-  const bed = h('button', { class: 'btn greet-button', type: 'button', 'data-quiet': 'true' }, pixelArt(ICON_BED), bedLabel);
+  const night = createNightButton(scene);
   const note = h('p', { class: 'greet-note', role: 'status' });
-  const row = h('div', { class: 'greet', hidden: true }, h('div', { class: 'greet-row' }, send, bed), note);
+  const row = h('div', { class: 'greet', hidden: true }, h('div', { class: 'greet-row' }, send, night), note);
   let partner = null;
-  let asleep = false;
+  let moods = new Map();
 
   const say = (message) => {
     note.textContent = message;
@@ -167,21 +167,34 @@ function createGreetings(scene) {
     }, 2600);
   };
 
-  let moods = new Map();
+  // Zs rise from the roof for each of you who has said good night.
   function showSleepers() {
-    const theirs = partner && moods.get(partner.id)?.asleep_since;
+    const mine = isAsleep(moods.get(getUserId()));
+    const theirs = partner && isAsleep(moods.get(partner.id));
     note.textContent = theirs ? `${partner.name} is asleep.` : '';
-    bedLabel.textContent = asleep ? 'Good morning' : 'Good night';
-    scene.setSleepers(Number(asleep) + Number(Boolean(theirs)));
+    scene.setSleepers(Number(mine) + Number(Boolean(theirs)));
   }
 
   async function refresh() {
     try {
       moods = await fetchMoods();
-      asleep = Boolean(moods.get(getUserId())?.asleep_since);
       showSleepers();
     } catch {
-      // The bed button still works once the meters are set up.
+      // The note simply stays empty until the meters are set up.
+    }
+  }
+
+  async function sendOne(kind) {
+    try {
+      // Good night and good morning also tuck you in and wake you up.
+      if (kind === 'good_night' || kind === 'good_morning') await setAsleep(kind === 'good_night');
+      await sendPoke(partner.id, kind);
+      if (kind === 'good_night') playDone();
+      else playPoke();
+      if (kind === 'good_night' || kind === 'good_morning') await refresh();
+      say(kind === 'good_night' ? 'Sweet dreams!' : kind === 'good_morning' ? 'Good morning!' : `Sent to ${partner.name}!`);
+    } catch {
+      say('That could not be sent. Please try again.');
     }
   }
 
@@ -199,15 +212,9 @@ function createGreetings(scene) {
               class: 'btn poke-choice',
               type: 'button',
               'data-quiet': 'true',
-              onclick: async () => {
+              onclick: () => {
                 modal.close();
-                try {
-                  await sendPoke(partner.id, kind);
-                  playPoke();
-                  say(`Sent to ${partner.name}!`);
-                } catch {
-                  say('That could not be sent. Please try again.');
-                }
+                sendOne(kind);
               },
             },
             pixelArt(POKES[kind].icon),
@@ -219,34 +226,42 @@ function createGreetings(scene) {
     );
   });
 
-  bed.addEventListener('click', async () => {
-    bed.disabled = true;
-    try {
-      await setAsleep(!asleep);
-      asleep = !asleep;
-      await sendPoke(partner.id, asleep ? 'good_night' : 'good_morning');
-      playDone();
-      say(asleep ? 'Sweet dreams!' : 'Good morning!');
-      showSleepers();
-    } catch {
-      say('That did not work. Please try again.');
-    }
-    bed.disabled = false;
-  });
-
   loadPartner()
     .then((found) => {
       if (!found) return;
       partner = found;
       sendLabel.textContent = `Send ${partner.name}…`;
-      row.hidden = false;
       refresh();
     })
     .catch(() => {
-      // The row stays hidden if the partner cannot be loaded.
+      // Only the night switch shows if the partner cannot be loaded.
+    })
+    .finally(() => {
+      send.hidden = !partner;
+      row.hidden = false;
     });
 
   return { el: row, stop: onLive('moods', refresh) };
+}
+
+// Switches night mode: the sky turns to night and the whole site goes dark.
+function createNightButton(scene) {
+  const icon = h('span', { class: 'greet-icon' });
+  const label = h('span');
+  const button = h('button', { class: 'btn greet-button', type: 'button' }, icon, label);
+  const show = () => {
+    const on = isNight();
+    icon.replaceChildren(pixelArt(on ? ICON_SUN : ICON_MOON));
+    label.textContent = on ? 'Day mode' : 'Night mode';
+    button.setAttribute('aria-pressed', String(on));
+  };
+  button.addEventListener('click', () => {
+    setNight(!isNight());
+    show();
+    scene.refresh();
+  });
+  show();
+  return button;
 }
 
 // Shows the title screen inside root. Returns a function that cleans it up.

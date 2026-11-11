@@ -1,0 +1,204 @@
+/* Night mode: the same world after dark. Stone turns to deep slate blue and
+   the lettering turns pale; the book, the quest board, the sign, and the
+   photo frame keep their own materials and are simply dimmed, as if by
+   lamplight. Switched on from the Play screen or Settings (see lib/theme.js). */
+:root[data-theme='night'] {
+  color-scheme: dark;
+
+  --stone-light: #5a5f80;
+  --stone: #2c3050;
+  --stone-mid: #1b1e36;
+  --stone-dark: #131528;
+  --stone-deep: #06070f;
+  --dirt-deep: #0b0c1a;
+
+  --night-text: #e8e6f4;
+  --night-soft: #aeabc9;
+  --night-raised: #474c72;
+  --night-sunk: #171a2e;
+  --night-card: #383d61;
+}
+
+[data-theme='night'] body {
+  background: var(--dirt-deep);
+}
+
+[data-theme='night'] .world {
+  background-image: linear-gradient(rgba(9, 11, 30, 0.82), rgba(9, 11, 30, 0.82)), var(--tile-dirt, none);
+}
+
+[data-theme='night'] .overlay {
+  background: rgba(3, 4, 12, 0.72);
+}
+
+/* Panels and their lettering. */
+[data-theme='night'] .panel {
+  color: var(--night-text);
+  box-shadow:
+    inset var(--edge) var(--edge) 0 var(--night-raised),
+    inset calc(-1 * var(--edge)) calc(-1 * var(--edge)) 0 var(--night-sunk);
+}
+
+[data-theme='night'] .panel :focus-visible,
+[data-theme='night'] button.day-slot:focus-visible {
+  outline-color: #ffffff;
+}
+
+[data-theme='night'] .hint,
+[data-theme='night'] .weekday-row,
+[data-theme='night'] .calendar-note,
+[data-theme='night'] .memory-caption,
+[data-theme='night'] .memory-by,
+[data-theme='night'] .bulk-count,
+[data-theme='night'] .past-day,
+[data-theme='night'] .result-date,
+[data-theme='night'] .result-note,
+[data-theme='night'] .pet-item-about,
+[data-theme='night'] .pet-diary-time {
+  color: var(--night-soft);
+}
+
+[data-theme='night'] .sign .hint {
+  color: #fff3dc;
+}
+
+/* Ordinary buttons. Green and red ones keep their colors. */
+[data-theme='night'] .btn:not(.btn--green, .btn--danger) {
+  background: #454a70;
+  box-shadow:
+    inset var(--edge) var(--edge) 0 #6b719c,
+    inset calc(-1 * var(--edge)) calc(-1 * var(--edge)) 0 #292c47;
+}
+
+[data-theme='night'] .btn:not(.btn--green, .btn--danger):active {
+  box-shadow:
+    inset var(--edge) var(--edge) 0 #292c47,
+    inset calc(-1 * var(--edge)) calc(-1 * var(--edge)) 0 #6b719c;
+}
+
+[data-theme='night'] .music-button[aria-pressed] {
+  background: #454a70;
+}
+
+/* Text boxes on stone panels. */
+[data-theme='night'] .panel .input {
+  color: var(--night-text);
+  background: #12142a;
+  box-shadow: inset var(--edge) var(--edge) 0 rgba(0, 0, 0, 0.4);
+}
+
+[data-theme='night'] .panel .input:disabled {
+  background: #23263f;
+}
+
+[data-theme='night'] .panel .input::placeholder {
+  color: #7f7c9c;
+}
+
+[data-theme='night'] .panel select.input {
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--night-text) 50%),
+    linear-gradient(135deg, var(--night-text) 50%, transparent 50%);
+}
+
+/* Slots of every kind: sunk into the stone. */
+[data-theme='night'] .slot,
+[data-theme='night'] .day-slot,
+[data-theme='night'] .photo-slot,
+[data-theme='night'] .bulk-thumb,
+[data-theme='night'] .list-chest,
+[data-theme='night'] .avatar-choice,
+[data-theme='night'] .pet-item-frame {
+  box-shadow:
+    inset 2px 2px 0 #0a0b17,
+    inset -2px -2px 0 var(--night-raised);
+}
+
+[data-theme='night'] .slot--item:hover,
+[data-theme='night'] button.day-slot:hover,
+[data-theme='night'] .list-chest:hover {
+  background: #2a2e4d;
+}
+
+[data-theme='night'] .slot--item[aria-current='page'],
+[data-theme='night'] .avatar-choice[aria-pressed='true'] {
+  background: #3f7a3a;
+  box-shadow:
+    inset 2px 2px 0 #0a0b17,
+    inset -2px -2px 0 var(--night-raised),
+    0 0 0 5px var(--stone-deep);
+}
+
+[data-theme='night'] .day-slot--blank {
+  background: #252945;
+  box-shadow:
+    inset 2px 2px 0 #1f2239,
+    inset -2px -2px 0 #2f3354;
+}
+
+[data-theme='night'] .day-slot--today {
+  box-shadow:
+    inset 2px 2px 0 #0a0b17,
+    inset -2px -2px 0 var(--night-raised),
+    0 0 0 4px #000000;
+}
+
+[data-theme='night'] .day-slot--anniversary {
+  background: #2f5f33;
+  box-shadow:
+    inset 0 0 0 3px var(--grass-mid),
+    inset 0 0 0 5px #1d3b21;
+}
+
+[data-theme='night'] .photo-slot--cover {
+  box-shadow:
+    inset 0 0 0 3px #ffd83d,
+    inset 2px 2px 0 #0a0b17;
+}
+
+/* Cards that sit on a panel. */
+[data-theme='night'] .memory,
+[data-theme='night'] .bulk-group,
+[data-theme='night'] .result,
+[data-theme='night'] .sent-letter {
+  color: var(--night-text);
+  background: var(--night-card);
+  box-shadow: inset 2px 2px 0 #4d5380;
+}
+
+[data-theme='night'] .sent-letter {
+  box-shadow:
+    inset 2px 2px 0 #4d5380,
+    0 0 0 2px var(--stone-dark);
+}
+
+[data-theme='night'] .sent-open {
+  color: var(--night-text);
+}
+
+[data-theme='night'] .sent-date {
+  color: var(--night-soft);
+}
+
+[data-theme='night'] .heart-count {
+  color: inherit;
+}
+
+[data-theme='night'] .pet-owned {
+  color: var(--grass-light);
+}
+
+[data-theme='night'] .pet-room {
+  box-shadow: 0 0 0 2px var(--night-raised);
+}
+
+/* Things made of paper and wood keep their colors and dim a little. */
+[data-theme='night'] .book,
+[data-theme='night'] .board,
+[data-theme='night'] .sign,
+[data-theme='night'] .frame,
+[data-theme='night'] .letter-book,
+[data-theme='night'] .letter-envelope,
+[data-theme='night'] .shelf-empty {
+  filter: brightness(0.84) saturate(0.92);
+}

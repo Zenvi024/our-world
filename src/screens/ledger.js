@@ -59,8 +59,10 @@ export function createLedger() {
       h('p', { class: 'summary-line' }, h('span', null, 'You paid'), h('span', null, pesos(monthPaid(me)))),
       h('p', { class: 'summary-line' }, h('span', null, `${partner.name} paid`), h('span', null, pesos(monthPaid(partner.id)))),
       h('p', { class: 'summary-line' }, h('span', null, 'Together'), h('span', null, pesos(monthPaid(me) + monthPaid(partner.id)))),
-      (treats(me) > 0 || treats(partner.id) > 0) &&
-        h('p', { class: 'summary-line' }, h('span', null, 'Treats'), h('span', null, `You ${treats(me)}, ${partner.name} ${treats(partner.id)}`)),
+      // An empty string adds nothing; a bare `false` would be printed as a word.
+      treats(me) > 0 || treats(partner.id) > 0
+        ? h('p', { class: 'summary-line' }, h('span', null, 'Treats'), h('span', null, `You ${treats(me)}, ${partner.name} ${treats(partner.id)}`))
+        : '',
       h('p', { class: 'summary-head' }, 'All time'),
       h('p', { class: 'summary-line' }, h('span', null, 'You have paid'), h('span', null, pesos(paid(me)))),
       h('p', { class: 'summary-line' }, h('span', null, `${partner.name} has paid`), h('span', null, pesos(paid(partner.id)))),

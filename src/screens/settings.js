@@ -10,6 +10,7 @@ import { isSfxOn, setSfx, getMusicLevel, setMusicLevel, nextTrack, onMusicChange
 import { loadMembers, saveAvatar, getUserId } from '../session.js';
 import { avatarArt, AVATAR_NAMES } from '../components/avatar.js';
 import { storageUsed } from '../data/photos.js';
+import { isNight, setNight } from '../lib/theme.js';
 import { notificationsSupported, notificationsOn, setNotifications } from '../lib/notify.js';
 import { downloadData, downloadPhotos } from '../lib/backup.js';
 import { createProgressBar } from '../components/progressBar.js';
@@ -206,6 +207,15 @@ function soundSection() {
       h('label', { for: 'sound-music' }, 'Music volume'),
       h('div', { class: 'input-row' }, music, h('button', { class: 'btn', type: 'button', onclick: nextTrack }, 'Next tune')),
     ),
+  );
+}
+
+function lookSection() {
+  const night = h('input', { type: 'checkbox', id: 'look-night', checked: isNight(), onchange: () => setNight(night.checked) });
+  return section(
+    'Look',
+    h('label', { class: 'check check--row', for: 'look-night' }, night, 'Night mode (a darker look and a night sky)'),
+    h('p', { class: 'hint' }, 'Remembered on this device. The moon button on the Play screen does the same.'),
   );
 }
 
@@ -496,6 +506,7 @@ export function createSettings() {
     { class: 'settings' },
     displayNameSection(),
     avatarSection(),
+    lookSection(),
     soundSection(),
     notificationSection(),
     splashSection(),

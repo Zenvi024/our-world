@@ -29,5 +29,10 @@ async function save(fields) {
 // Sets one of my meters: field is 'hearts' or 'hunger'.
 export const setMeter = (field, value) => save({ [field]: value, updated_at: new Date().toISOString() });
 
+// Asleep means "said good night within the last 12 hours and has not said
+// good morning since", so nobody stays asleep forever by forgetting.
+const SLEEP_MS = 12 * 3_600_000;
+export const isAsleep = (mood) => Boolean(mood?.asleep_since) && Date.now() - new Date(mood.asleep_since).getTime() < SLEEP_MS;
+
 // Going to bed, or waking up.
 export const setAsleep = (asleep) => save({ asleep_since: asleep ? new Date().toISOString() : null });

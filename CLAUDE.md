@@ -427,13 +427,21 @@ Zen chose these from a list of suggestions. They need `supabase/migration-5.sql`
 - **Tidy-up:** unused icons and dead code removed. The style sheets are still layered from the two look changes; merging them into one is still to do.
 - **Chosen for later by Zen:** the first-entry book for Jay (he will plan it first). **Declined:** a countdown sign and quest savings.
 
+### Happybara and night mode (November 11, 2026) — on the preview branch, not yet merged
+Zen asked for "everything about" Happybara, and for the Good night button to become a night-mode switch. Needs `supabase/migration-6.sql`.
+- **Happybara** (hotbar egg, route `#/pet`): one shared capybara in a pixel room. Four needs run down with the clock, even while the site is closed: hunger (10 hours), thirst (6), fun (14), clean (30). Feed, Water, Play, and Bathe earn coins (2, 3, 5, 8) only when the need is below 85; feeding uses one meal from the pantry. Tapping the pet cuddles it (love +1, and 1 coin at most once an hour). Love raises its level (30 per level).
+- **Shop:** a basket of food (8 coins, three meals), furniture that appears in the room (plant 25, rug 30, lamp 35, painting 45, bed 60, bookshelf 70, tub 90), and hats (orange 20, blossom 25, bow 30, crown 100). The prices live in both `src/data/pet.js` and `pet_buy` in the SQL; change them in both places.
+- The pet sleeps from 10:00 PM to 6:00 AM Manila time (in its bed, if it has one), bathes in the tub if it has one, looks sad when a need is nearly empty, can be renamed (tap its name), and keeps a diary of who did what. A pop-up says when it needs something (at most once every 4 hours per device).
+- Everything goes through the database functions `pet_care`, `pet_buy`, `pet_wear`, and `pet_rename`, so coins cannot be invented from the browser.
+- **Night mode:** the moon button on the Play screen (and a switch in Settings, under Look) turns the scene to night and the whole site to a dark slate-blue palette (`src/styles/night.css`, `src/lib/theme.js`). Remembered per device. The book, quest board, sign, and photo frame keep their materials and are dimmed.
+- **Good night and Good morning** moved into the "Send…" menu. They still set who is asleep (Zs on the roof, "zZ" beside the name), and sleep now wears off by itself after 12 hours.
+
 ### Advice given on a private chat (Zen asked; not built yet)
 Feasible as a later milestone: a messages table, live updates through Supabase Realtime, emoji from the normal keyboard, and photos through the existing photo pipeline. The catch is notifications: without them a message is only seen when the site is open. Push notifications on iPhone need the site added to the Home Screen, permission granted, and a small server function with its own keys. Messages would be private to the two accounts but not end-to-end encrypted. Recommended after the anniversary, starting without push.
 
 ### Still to do, in this order (Zen asked that none of these be forgotten)
 1. **Private chat** (see the advice above), if Zen confirms.
-2. **"Happybara" virtual pet** (new hotbar slot, perhaps an egg icon): a Tamagotchi-style capybara the two care for together. It persists and keeps running: it has needs (food, water), and they can feed it, play with it, bathe it, and tap it for reactions. Caring for it earns points, which buy food, things for the capybara, and furniture for the house. Zen left the specifics to the builder. Needs its own tables (a third SQL file).
-4. **Seasons for the title screen:** a way to switch between spring (current), autumn, and winter versions of the scene.
-5. **Night mode:** a dark version of the scene, and a dark mode for the whole site that changes the palette and overall vibe.
-6. **Reminders for upcoming dates** beyond goals and the anniversary (ties into Batch 2 date invitations).
-7. Batch 2 as written in section 5: Anniversary mode, crafting table date generator, date invitations.
+2. **Seasons for the title screen:** a way to switch between spring (current), autumn, and winter versions of the scene.
+3. **Reminders for upcoming dates** beyond goals and the anniversary (ties into Batch 2 date invitations).
+4. Batch 2 as written in section 5: Anniversary mode, crafting table date generator, date invitations.
+5. The first-entry book for Jay (Zen will plan it first), and merging the layered style sheets into one.
