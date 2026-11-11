@@ -1,0 +1,594 @@
+/* Daily-life features: greetings, lists, questions, steps, avatars, and the
+   small touches (item names, the lily loader, the chest opening). */
+
+/* ---------- Hotbar item names ---------- */
+.hotbar-holder {
+  position: relative;
+}
+
+.hotbar-name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 78px);
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.75);
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+
+.hotbar-name--showing {
+  opacity: 1;
+}
+
+/* ---------- Lily loader ---------- */
+.loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  font-family: var(--font-pixel);
+  font-size: 1.3125rem;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.loader-lily {
+  width: 56px;
+  height: 56px;
+  transform-origin: 35% 100%;
+  animation: lily-sway 1.2s steps(4) infinite alternate;
+}
+
+@keyframes lily-sway {
+  from {
+    transform: rotate(-7deg);
+  }
+  to {
+    transform: rotate(7deg);
+  }
+}
+
+/* The chest lid swings up when a chest opens. */
+.chest {
+  animation: chest-open 0.28s steps(5) both;
+  transform-origin: 50% 100%;
+}
+
+@keyframes chest-open {
+  from {
+    transform: scaleY(0.2);
+    opacity: 0.3;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+/* ---------- Play screen: send something, good night ---------- */
+.greet {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.greet-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.greet-button {
+  gap: 8px;
+  min-height: 44px;
+  padding: 6px 14px;
+  font-size: 1.3125rem;
+}
+
+.greet-button .pixel-art {
+  width: 22px;
+  height: 22px;
+}
+
+/* The album button waits, dimmed, until the album is made. */
+.greet-button--soon {
+  position: relative;
+  opacity: 0.62;
+  cursor: default;
+}
+
+.greet-button--soon .pixel-art {
+  filter: grayscale(0.7);
+}
+
+.soon-tag {
+  padding: 1px 5px 2px;
+  font-family: var(--font-pixel);
+  font-size: 1rem;
+  line-height: 1;
+  color: #2b2a26;
+  text-shadow: none;
+  background: var(--splash);
+}
+
+/* The sun-or-moon switch: a square button under the speaker. */
+.night-button {
+  position: absolute;
+  z-index: 2;
+  top: calc(max(10px, env(safe-area-inset-top)) + 52px);
+  right: 10px;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+}
+
+.night-button .pixel-art {
+  width: 26px;
+  height: 26px;
+}
+
+.greet-note {
+  min-height: 1.1em;
+  font-family: var(--font-pixel);
+  font-size: 1.375rem;
+  line-height: 1.1;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.65);
+}
+
+.poke-menu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.poke-choice {
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  font-size: 1.25rem;
+  text-align: left;
+}
+
+.poke-choice .pixel-art {
+  flex: none;
+  width: 24px;
+  height: 24px;
+}
+
+/* ---------- Meters: a face beside the name ---------- */
+.meter-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.meter-face .avatar {
+  width: 24px;
+  height: 24px;
+  filter: drop-shadow(1px 2px 0 rgba(0, 0, 0, 0.5));
+}
+
+/* ---------- Memory Chest: more buttons, results ---------- */
+.calendar-actions {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.calendar-actions .btn {
+  flex: 1 1 auto;
+  padding-inline: 10px;
+  font-size: 1.3125rem;
+}
+
+.calendar-actions .calendar-add {
+  flex: 1 1 100%;
+  max-width: none;
+  font-size: 1.5rem;
+}
+
+.calendar-tip {
+  font-family: var(--font-pixel);
+  font-size: 1.25rem;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+}
+
+.calendar-tip:empty {
+  display: none;
+}
+
+.result-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px;
+  text-align: left;
+  color: var(--ink);
+  background: #b4b4b4;
+  border: 2px solid var(--stone-dark);
+  box-shadow: inset 2px 2px 0 #d9d9d9;
+  cursor: pointer;
+}
+
+.result-slot {
+  flex: none;
+  width: 64px;
+}
+
+.result-words {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.result-title {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.result-date,
+.result-note {
+  font-family: var(--font-pixel);
+  font-size: 1.125rem;
+  line-height: 1.05;
+  color: #3d3b35;
+}
+
+.result-note {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* ---------- Lists: a row of chests ---------- */
+.chest-shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+  gap: 8px;
+}
+
+/* Inside a grid (the letter shelf, the list chests) the loader takes the
+   whole row, so its line of text never wraps into a narrow column. */
+.loader {
+  grid-column: 1 / -1;
+}
+
+.list-chest {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 132px;
+  padding: 10px 6px;
+  color: var(--ink);
+  background: var(--stone-mid);
+  border: 0;
+  box-shadow:
+    inset 2px 2px 0 #373737,
+    inset -2px -2px 0 #ffffff;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.list-chest:hover {
+  background: #a3a3a3;
+}
+
+.list-chest-icon {
+  width: 56px;
+  height: 56px;
+  filter: drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.35));
+}
+
+.list-chest-title {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  line-height: 1.05;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.list-chest-count {
+  font-family: var(--font-pixel);
+  font-size: 1.125rem;
+  line-height: 1;
+  color: #f2f2f2;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+}
+
+.list-chest-plus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  font-family: var(--font-display);
+  font-size: 3rem;
+  line-height: 1;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+.list-items {
+  display: flex;
+  flex-direction: column;
+}
+
+.list-item,
+.step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 2px dotted var(--stone-mid);
+}
+
+.list-item .check,
+.step .check {
+  flex: 1;
+  min-width: 0;
+  min-height: 40px;
+  font-size: 1.0625rem;
+  overflow-wrap: anywhere;
+}
+
+.list-item--done .check span,
+.step--done .check span {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.list-item .line-remove,
+.step .line-remove {
+  flex: none;
+  color: var(--stone-dark);
+}
+
+.quick-row--wrap {
+  flex-wrap: wrap;
+  margin: 0 0 6px;
+}
+
+/* ---------- Question of the day: a wooden sign ---------- */
+.question-screen,
+.lists-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sign {
+  padding: 14px 14px 16px;
+  color: #ffffff;
+  background-color: #a9744a;
+  background-image: repeating-linear-gradient(0deg, transparent 0 30px, rgba(0, 0, 0, 0.14) 30px 32px);
+  border: var(--edge) solid #3f2a1b;
+  box-shadow:
+    inset 3px 3px 0 #cf9b6a,
+    inset -3px -3px 0 #7d5233,
+    0 5px 0 rgba(0, 0, 0, 0.28);
+}
+
+.sign-label {
+  font-family: var(--font-pixel);
+  font-size: 1.25rem;
+  line-height: 1;
+  color: #ffe98a;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
+}
+
+.sign-text {
+  margin: 6px 0 12px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.75rem;
+  line-height: 1.1;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
+}
+
+.sign .hint {
+  margin: 8px 0 0;
+  color: #fff3dc;
+}
+
+.sign .status--error {
+  color: #ffd0c9;
+}
+
+.answer {
+  margin-top: 8px;
+  padding: 8px 10px;
+  color: var(--ink);
+  background: #fdf8e7;
+  box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.25);
+}
+
+.answer--waiting {
+  background: #e6dcc0;
+}
+
+.answer-who {
+  font-family: var(--font-pixel);
+  font-size: 1.125rem;
+  line-height: 1;
+  color: var(--grass-dark);
+}
+
+.answer-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.past-question {
+  padding: 10px 0;
+  border-bottom: 2px solid var(--stone-mid);
+}
+
+.past-day {
+  font-family: var(--font-pixel);
+  font-size: 1.125rem;
+  line-height: 1;
+  color: #45433d;
+}
+
+.past-text {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.375rem;
+  line-height: 1.05;
+}
+
+/* ---------- Letters: sealed envelopes ---------- */
+.letter-envelope {
+  --cover: #f3ead0;
+  --cover-dark: #cdbd8f;
+  --cover-light: #fffaf0;
+  justify-content: flex-end;
+  padding: 10px 8px 12px;
+  box-shadow:
+    inset 0 0 0 3px var(--cover-dark),
+    3px 3px 0 rgba(0, 0, 0, 0.3);
+}
+
+.letter-flap {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  right: 3px;
+  height: 46%;
+  background: linear-gradient(to bottom right, transparent 49%, var(--cover-dark) 49% 51%, transparent 51%),
+    linear-gradient(to bottom left, transparent 49%, var(--cover-dark) 49% 51%, transparent 51%);
+}
+
+.letter-flap::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  background: var(--rose);
+  box-shadow:
+    inset -3px -3px 0 #a8362d,
+    inset 3px 3px 0 #f28a80;
+}
+
+.letter-envelope .letter-label {
+  position: relative;
+  background: none;
+  box-shadow: none;
+  color: var(--ink);
+}
+
+/* ---------- Quest steps ---------- */
+.steps {
+  margin-top: 8px;
+}
+
+.steps-count {
+  font-family: var(--font-pixel);
+  font-size: 1.125rem;
+  line-height: 1;
+  color: var(--grass-dark);
+}
+
+.step {
+  border-bottom-color: #e2d6b2;
+}
+
+.step-add {
+  margin-top: 6px;
+}
+
+.step-add .btn {
+  width: 44px;
+  padding: 0;
+  font-size: 1.5rem;
+}
+
+/* ---------- Ledger: month totals, tappable lines ---------- */
+.summary-head {
+  margin-top: 12px;
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  line-height: 1.1;
+  color: #8a7a5c;
+}
+
+.summary-head:first-child {
+  margin-top: 0;
+}
+
+.line-edit {
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.line-edit:hover .line-title {
+  text-decoration: underline;
+}
+
+/* ---------- Settings: capybara picker ---------- */
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 6px;
+}
+
+.avatar-choice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  padding: 0;
+  background: var(--stone-mid);
+  border: 0;
+  box-shadow:
+    inset 2px 2px 0 #373737,
+    inset -2px -2px 0 #ffffff;
+  cursor: pointer;
+}
+
+.avatar-choice .avatar {
+  width: 70%;
+  height: 70%;
+}
+
+.avatar-choice[aria-pressed='true'] {
+  background: #a9d79a;
+  outline: 3px solid #ffffff;
+  box-shadow:
+    inset 2px 2px 0 #373737,
+    inset -2px -2px 0 #ffffff,
+    0 0 0 5px var(--stone-deep);
+  z-index: 1;
+}

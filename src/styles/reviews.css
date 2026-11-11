@@ -1,0 +1,424 @@
+/* Our Reviews: places and films, with stars from each of you. */
+.reviews {
+  width: min(100%, 760px);
+  margin: 0 auto;
+}
+
+.review-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.review-head .panel-title {
+  margin-bottom: 0;
+}
+
+.review-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.review-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.review-search {
+  flex: 1 1 180px;
+  width: auto;
+  min-width: 0;
+}
+
+.review-filter[aria-pressed='true'] {
+  background: var(--grass-mid);
+  box-shadow:
+    inset var(--edge) var(--edge) 0 var(--grass-light),
+    inset calc(-1 * var(--edge)) calc(-1 * var(--edge)) 0 var(--grass-dark);
+}
+
+.review-sort {
+  flex: 0 1 170px;
+  width: auto;
+}
+
+.review-summary {
+  margin-bottom: 8px;
+  font-family: var(--font-pixel);
+  font-size: 1.3125rem;
+  line-height: 1.1;
+}
+
+.review-summary:empty {
+  display: none;
+}
+
+.review-list {
+  display: grid;
+  gap: 8px;
+}
+
+@media (min-width: 700px) {
+  .review-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* One review: a card set into the panel, like a filled slot. The words are
+   one big button; the photos beneath are buttons of their own. */
+.review {
+  display: grid;
+  align-content: start;
+  color: var(--ink);
+  background: #b4b4b4;
+  border: 2px solid var(--stone-dark);
+  box-shadow: inset 2px 2px 0 #d9d9d9;
+}
+
+.review-open {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  width: 100%;
+  padding: 10px 10px 12px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.review-open:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.review-photos,
+.review-photo-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.review-photos {
+  padding: 0 10px 10px;
+}
+
+.review-photo-grid {
+  margin-bottom: 8px;
+}
+
+.review-photo-grid:empty {
+  display: none;
+}
+
+/* A photo sits in an inventory slot. */
+.review-thumb {
+  position: relative;
+  display: block;
+  width: 64px;
+  height: 64px;
+  padding: 3px;
+  background: var(--stone-mid);
+  border: 1px solid var(--stone-deep);
+  border-radius: 0;
+  box-shadow:
+    inset 2px 2px 0 #373737,
+    inset -2px -2px 0 #ffffff;
+  cursor: pointer;
+}
+
+.review-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.review-thumb img:not([src]),
+.review-thumb img[src=''] {
+  visibility: hidden;
+}
+
+.review-thumb--edit {
+  cursor: default;
+}
+
+.review-more {
+  position: absolute;
+  right: 4px;
+  bottom: 2px;
+  font-family: var(--font-pixel);
+  font-size: 1.375rem;
+  line-height: 1;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.8);
+}
+
+.review-thumb-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 26px;
+  height: 26px;
+  padding: 0 0 2px;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  line-height: 1;
+  color: #ffffff;
+  background: var(--danger);
+  border: 2px solid var(--stone-deep);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.review-badge {
+  justify-self: start;
+  padding: 1px 7px 2px;
+  font-family: var(--font-pixel);
+  font-size: 1.125rem;
+  line-height: 1.1;
+  color: #3a2a1c;
+  background: #ffd83d;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.25);
+}
+
+.review-again {
+  font-family: var(--font-pixel);
+  font-size: 1.125rem;
+  line-height: 1;
+  color: var(--grass-deep);
+}
+
+.review-day {
+  margin-top: 4px;
+}
+
+.review-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.review-tag {
+  padding: 1px 7px 2px;
+  font-family: var(--font-pixel);
+  font-size: 1.125rem;
+  line-height: 1.1;
+  color: #ffffff;
+  background: var(--stone-dark);
+}
+
+.review-tag--cafe {
+  background: #8a5a37;
+}
+
+.review-tag--restaurant {
+  background: #b5372b;
+}
+
+.review-tag--movie {
+  background: #3d6aa0;
+}
+
+.review-tag--show {
+  background: #6f4689;
+}
+
+.review-tag--place {
+  background: var(--grass-dark);
+}
+
+.review-date {
+  font-family: var(--font-pixel);
+  font-size: 1.125rem;
+  line-height: 1;
+  color: #45433d;
+}
+
+.review-title {
+  font-family: var(--font-display);
+  font-size: 1.625rem;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.review-place {
+  font-size: 0.9375rem;
+  line-height: 1.25;
+  color: #45433d;
+}
+
+.review-line {
+  display: grid;
+  grid-template-columns: 4.6ch auto auto;
+  align-items: center;
+  justify-content: start;
+  gap: 2px 8px;
+  margin-top: 4px;
+}
+
+.review-who {
+  font-family: var(--font-pixel);
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.review-words {
+  grid-column: 1 / -1;
+  font-size: 0.9375rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.review-waiting {
+  font-family: var(--font-pixel);
+  font-size: 1.125rem;
+  line-height: 1;
+  color: #45433d;
+}
+
+.review-nudge {
+  margin-top: 4px;
+  font-family: var(--font-pixel);
+  font-size: 1.1875rem;
+  line-height: 1;
+  color: var(--grass-deep);
+}
+
+.stars {
+  display: inline-flex;
+  gap: 1px;
+}
+
+.star {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+}
+
+.star .pixel-art {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.35));
+}
+
+.star--empty .pixel-art {
+  filter: grayscale(1) brightness(0.55) opacity(0.55);
+}
+
+.star-picker {
+  display: flex;
+  gap: 4px;
+}
+
+.star-button {
+  width: 44px;
+  height: 44px;
+  padding: 6px;
+  background: var(--stone-mid);
+  border: 1px solid var(--stone-deep);
+  border-radius: 0;
+  box-shadow:
+    inset 2px 2px 0 #4f4f4f,
+    inset -2px -2px 0 #dcdcdc;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.review-panel {
+  width: min(100%, 440px);
+}
+
+.review-panel textarea.input {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.review-theirs {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  align-items: center;
+  justify-content: start;
+  gap: 2px 8px;
+  margin-bottom: 4px;
+  padding: 8px 10px;
+  background: #b4b4b4;
+  border: 2px solid var(--stone-dark);
+  box-shadow: inset 2px 2px 0 #d9d9d9;
+}
+
+.review-delete {
+  margin-right: auto;
+}
+
+.review-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 10px;
+  font-family: var(--font-pixel);
+  font-size: 1.375rem;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.review-empty-star {
+  width: 48px;
+  height: 48px;
+}
+
+/* Night mode. */
+[data-theme='night'] .review,
+[data-theme='night'] .review-theirs {
+  color: var(--night-text);
+  background: var(--night-card);
+  box-shadow: inset 2px 2px 0 #4d5380;
+}
+
+[data-theme='night'] .review-again {
+  color: var(--grass-light);
+}
+
+[data-theme='night'] .review-thumb {
+  box-shadow:
+    inset 2px 2px 0 #0a0b17,
+    inset -2px -2px 0 var(--night-raised);
+}
+
+[data-theme='night'] .review-date,
+[data-theme='night'] .review-place,
+[data-theme='night'] .review-waiting {
+  color: var(--night-soft);
+}
+
+[data-theme='night'] .review-nudge {
+  color: var(--grass-light);
+}
+
+[data-theme='night'] .star-button {
+  box-shadow:
+    inset 2px 2px 0 #0a0b17,
+    inset -2px -2px 0 var(--night-raised);
+}
+
+/* The "again" tick under the stars. */
+.review-panel .field .check {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0 0;
+}

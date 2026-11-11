@@ -4,6 +4,10 @@ import './styles/world.css';
 import './styles/calendar.css';
 import './styles/charm.css';
 import './styles/cozy.css';
+import './styles/life.css';
+import './styles/pet.css';
+import './styles/reviews.css';
+import './styles/night.css';
 import { currentRoute, navigate, onRouteChange } from './router.js';
 import { initSession, getSession, onSessionChange } from './session.js';
 import { mountTitle } from './screens/title.js';
@@ -13,6 +17,9 @@ import { installClickSounds, installMusic } from './lib/sound.js';
 import { checkAdvancements } from './data/advancements.js';
 import { showLandingNotices, showNewPokes, watchForPokes } from './lib/notices.js';
 import { openChest } from './screens/chest.js';
+import { startLive, stopLive, onLive } from './lib/live.js';
+import { recordVisit } from './data/visits.js';
+import { installTheme } from './lib/theme.js';
 
 const root = document.getElementById('app');
 const HOME = 'calendar';
@@ -61,14 +68,21 @@ function render() {
     checkAdvancements();
     showNewPokes(); // pokes, a partner feeling low, and new letters
     watchForPokes();
+    recordVisit().catch(() => {});
   }
   showWorldScreen(route);
 }
 
+installTheme();
 installDirtTile();
 installClickSounds();
 installMusic();
 await initSession();
+// Live updates start once someone is signed in, and stop when they leave.
+const syncLive = () => (getSession() ? startLive() : stopLive());
+syncLive();
+onSessionChange(syncLive);
+for (const topic of ['pokes', 'moods', 'letters']) onLive(topic, () => showNewPokes());
 onRouteChange(render);
 onSessionChange(render);
 render();

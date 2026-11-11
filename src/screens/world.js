@@ -1,6 +1,6 @@
 import { h } from '../lib/dom.js';
 import { pixelArt } from '../art/pixel.js';
-import { LILY, ICON_HOME } from '../art/sprites.js';
+import { ICON_HOME } from '../art/sprites.js';
 import { createHotbar } from '../components/hotbar.js';
 import { createSettings } from './settings.js';
 import { createCalendar } from './calendar.js';
@@ -9,23 +9,23 @@ import { createLedger } from './ledger.js';
 import { createXpBar } from '../components/xpBar.js';
 import { createLetters } from './letters.js';
 import { createMusicButton } from '../components/musicButton.js';
-import { createMeters } from '../components/moodHearts.js';
-
-function comingSoon(message) {
-  return () =>
-    h(
-      'div',
-      { class: 'panel empty-state' },
-      pixelArt(LILY, 'empty-lily'),
-      h('p', null, message),
-    );
-}
+import { createMeters } from '../components/meters.js';
+import { createLists } from './lists.js';
+import { createQuestion } from './question.js';
+import { createPet } from './pet.js';
+import { createReviews } from './reviews.js';
+import { onLive } from '../lib/live.js';
+import { suggestOpenWhen } from '../lib/notices.js';
 
 const SCREENS = {
-  calendar: { title: 'Memory Chest', create: createCalendar },
-  letters: { title: 'Letters', create: createLetters },
-  advancements: { title: 'Quests', create: createAdvancements },
-  ledger: { title: 'Ledger', create: createLedger },
+  calendar: { title: 'Memory Chest', create: createCalendar, live: 'memories' },
+  letters: { title: 'Letters', create: createLetters, live: 'letters' },
+  advancements: { title: 'Quests', create: createAdvancements, live: 'goals' },
+  ledger: { title: 'Ledger', create: createLedger, live: 'ledger' },
+  lists: { title: 'Lists', create: createLists, live: 'lists' },
+  question: { title: 'Question', create: createQuestion, live: 'question' },
+  pet: { title: 'Happybara', create: createPet }, // keeps itself up to date
+  reviews: { title: 'Our Reviews', create: createReviews, live: 'reviews' },
   settings: { title: 'Settings', create: createSettings },
 };
 
@@ -59,16 +59,28 @@ export function mountWorld(root) {
         createMusicButton().el,
       ),
       outlet,
-      h('footer', { class: 'hud' }, createMeters().el, createXpBar(), hotbar.el),
+      h('footer', { class: 'hud' }, createMeters({ onLowHearts: suggestOpenWhen }).el, createXpBar(), hotbar.el),
     ),
   );
 
-  return function show(route) {
+  let current = null;
+  // When the other person changes what this screen shows, redraw it, unless
+  // a pop-up is open (so nothing shifts under your fingers).
+  onLive('*', (topic) => {
+    if (current && SCREENS[current].live === topic && !document.querySelector('body > .overlay')) show(current);
+  });
+
+  return show;
+
+  function show(route) {
+    current = route;
     const screen = SCREENS[route];
     heading.textContent = screen.title;
     document.title = `${screen.title} · Our Little World`;
+    const keepScroll = outlet.dataset.route === route ? outlet.scrollTop : 0;
     outlet.replaceChildren(screen.create());
-    outlet.scrollTop = 0;
+    outlet.dataset.route = route;
+    outlet.scrollTop = keepScroll;
     hotbar.setActive(route);
-  };
+  }
 }

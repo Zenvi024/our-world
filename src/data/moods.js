@@ -1,34 +1,38 @@
 import { supabase } from '../supabase.js';
 import { getUserId } from '../session.js';
+import { announce } from '../lib/live.js';
 
 // The two meters each of you sets for yourself, from 0 to 5: hearts (how you
-// are feeling) and hunger (how well fed you are).
+// are feeling) and angry cats (how annoyed you are). The same row also remembers
+// whether you have gone to bed.
 export const MAX_METER = 5;
 export const LOW_METER = 2; // at or below this, the other person is told
 
-// A Map of member id -> { hearts, hunger, updated_at }.
+// A Map of member id -> { hearts, angry, asleep_since, updated_at }.
 export async function fetchMoods() {
-  let { data, error } = await supabase.from('moods').select('user_id, hearts, hunger, updated_at');
-  if (error) {
-    // Before the hunger column exists, fall back to hearts alone.
-    ({ data, error } = await supabase.from('moods').select('user_id, hearts, updated_at'));
-  }
+  const { data, error } = await supabase.from('moods').select('*');
   if (error) throw error;
   return new Map(data.map((row) => [row.user_id, row]));
 }
 
-// Sets one of my meters: field is 'hearts' or 'hunger'.
-export async function setMeter(field, value) {
-  const fields = { [field]: value, updated_at: new Date().toISOString() };
-  const { data, error } = await supabase
-    .from('moods')
-    .update(fields)
-    .eq('user_id', getUserId())
-    .select('user_id');
+async function save(fields) {
+  const { data, error } = await supabase.from('moods').update(fields).eq('user_id', getUserId()).select('user_id');
   if (error) throw error;
   if (!data.length) {
     // First time: hearts must have a value, so a full meter is assumed.
     const { error: insertError } = await supabase.from('moods').insert({ hearts: MAX_METER, ...fields });
     if (insertError) throw insertError;
   }
+  announce('moods');
 }
+
+// Sets one of my meters: field is 'hearts' or 'angry'.
+export const setMeter = (field, value) => save({ [field]: value, updated_at: new Date().toISOString() });
+
+// Asleep means "said good night within the last 12 hours and has not said
+// good morning since", so nobody stays asleep forever by forgetting.
+const SLEEP_MS = 12 * 3_600_000;
+export const isAsleep = (mood) => Boolean(mood?.asleep_since) && Date.now() - new Date(mood.asleep_since).getTime() < SLEEP_MS;
+
+// Going to bed, or waking up.
+export const setAsleep = (asleep) => save({ asleep_since: asleep ? new Date().toISOString() : null });

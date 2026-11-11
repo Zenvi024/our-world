@@ -1,0 +1,457 @@
+/* Happybara: the pet's room, its needs, and the shop. */
+.pet-screen {
+  width: min(100%, 980px);
+  margin: 0 auto;
+}
+
+.pet-body {
+  display: grid;
+  gap: 12px;
+}
+
+.pet-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-bottom: 8px;
+}
+
+.pet-name {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-display);
+  font-size: 1.875rem;
+  line-height: 1;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline dotted 2px;
+  text-underline-offset: 4px;
+}
+
+.pet-level {
+  padding: 1px 7px 2px;
+  background: var(--grass-dark);
+  color: #ffffff;
+  font-family: var(--font-pixel);
+  font-size: 1.25rem;
+  line-height: 1.1;
+}
+
+.pet-purse {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 10px;
+}
+
+.pet-count,
+.pet-coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-pixel);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.pet-count .pixel-art,
+.pet-coins .pixel-art {
+  width: 22px;
+  height: 22px;
+}
+
+/* The room is a picture in a dark frame, like a painting of their home. */
+.pet-room {
+  border: var(--edge) solid var(--stone-deep);
+  box-shadow: 0 0 0 2px var(--stone-mid);
+  background: #a9744a;
+  line-height: 0;
+}
+
+.pet-canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 128 / 84;
+  image-rendering: pixelated;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.pet-canvas:focus-visible {
+  outline: 3px solid var(--splash);
+  outline-offset: 2px;
+}
+
+.pet-says {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.3em;
+  margin-top: 6px;
+  font-family: var(--font-pixel);
+  font-size: 1.4375rem;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.pet-love {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.pet-love-bar,
+.pet-bar {
+  display: block;
+  height: 12px;
+  background: var(--stone-dark);
+  border: 2px solid var(--stone-deep);
+  overflow: hidden;
+}
+
+.pet-love-bar {
+  flex: 1;
+}
+
+.pet-love-fill,
+.pet-bar-fill {
+  display: block;
+  height: 100%;
+  transition: width 0.4s steps(8);
+}
+
+.pet-love-fill {
+  background: #e2574c;
+  box-shadow: inset 0 2px 0 #f58f86;
+}
+
+.pet-love-text {
+  flex: none;
+  font-family: var(--font-pixel);
+  font-size: 1.1875rem;
+  line-height: 1;
+}
+
+.pet-needs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 10px;
+  margin-bottom: 12px;
+}
+
+/* Each need: its name and bar on one line, its button beneath. */
+.pet-need {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.pet-need .btn {
+  grid-column: 1 / -1;
+}
+
+.pet-need-label {
+  font-family: var(--font-display);
+  font-size: 1.3125rem;
+  line-height: 1;
+}
+
+.pet-bar-fill--hunger {
+  background: #d99a3c;
+  box-shadow: inset 0 2px 0 #f0bf74;
+}
+
+.pet-bar-fill--thirst {
+  background: #5aa9e6;
+  box-shadow: inset 0 2px 0 #9fd0f5;
+}
+
+.pet-bar-fill--fun {
+  background: #f28cb4;
+  box-shadow: inset 0 2px 0 #fbc0d6;
+}
+
+.pet-bar-fill--clean {
+  background: #5bb543;
+  box-shadow: inset 0 2px 0 #8fe46a;
+}
+
+.pet-bar-fill--low {
+  background: #c8423a;
+  box-shadow: inset 0 2px 0 #e0685c;
+  animation: pet-low 1s steps(2) infinite;
+}
+
+@keyframes pet-low {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.pet-care-button {
+  width: 100%;
+}
+
+.pet-extras {
+  margin-bottom: 10px;
+}
+
+.pet-extras .btn {
+  flex: 1;
+}
+
+.pet-care .hint {
+  margin-bottom: 0;
+}
+
+/* ---------- The shop ---------- */
+.pet-shop-panel {
+  width: min(100%, 460px);
+}
+
+.pet-shop-purse {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 8px;
+  font-family: var(--font-pixel);
+  font-size: 1.3125rem;
+  line-height: 1.1;
+}
+
+.pet-shop {
+  max-height: min(52dvh, 460px);
+  overflow-y: auto;
+  margin-bottom: 8px;
+  padding-right: 4px;
+}
+
+.pet-shelf-title {
+  margin: 10px 0 6px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.375rem;
+  line-height: 1;
+}
+
+.pet-shelf-title:first-child {
+  margin-top: 0;
+}
+
+.pet-items {
+  display: grid;
+  gap: 6px;
+}
+
+.pet-item {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Each thing for sale sits in an inventory slot. */
+.pet-item-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  padding: 5px;
+  background: var(--stone-mid);
+  border: 1px solid var(--stone-deep);
+  box-shadow:
+    inset 2px 2px 0 #4f4f4f,
+    inset -2px -2px 0 #dcdcdc;
+}
+
+.pet-item-art {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.pet-item-words {
+  display: grid;
+  gap: 1px;
+}
+
+.pet-item-name {
+  font-family: var(--font-display);
+  font-size: 1.3125rem;
+  line-height: 1.05;
+}
+
+.pet-item-about {
+  font-size: 0.875rem;
+  line-height: 1.25;
+  color: #45433d;
+}
+
+.pet-buy {
+  min-width: 72px;
+}
+
+.pet-buy .pet-coins {
+  font-size: 1.375rem;
+}
+
+.pet-owned {
+  font-family: var(--font-pixel);
+  font-size: 1.1875rem;
+  line-height: 1;
+  color: var(--grass-dark);
+}
+
+.pet-diary {
+  display: grid;
+  gap: 8px;
+  max-height: 50dvh;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.pet-diary li {
+  display: grid;
+  gap: 1px;
+}
+
+.pet-diary-time {
+  font-family: var(--font-pixel);
+  font-size: 1.125rem;
+  line-height: 1;
+  color: #45433d;
+}
+
+.greet-icon {
+  display: inline-flex;
+}
+
+/* ---------- Room tabs (and the shop's sections) ---------- */
+.pet-tabs {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 6px;
+}
+
+.pet-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 34px;
+  padding: 2px 2px 3px;
+  font-family: var(--font-pixel);
+  font-size: 1.1875rem;
+  line-height: 1;
+  color: #ffffff;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+  background: #7d7d7d;
+  border: 2px solid var(--stone-deep);
+  border-radius: 0;
+  box-shadow:
+    inset 2px 2px 0 #b4b4b4,
+    inset -2px -2px 0 #565656;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.pet-tab[aria-selected='true'] {
+  background: var(--grass-mid);
+  box-shadow:
+    inset 2px 2px 0 var(--grass-light),
+    inset -2px -2px 0 var(--grass-dark);
+}
+
+.pet-tab--locked {
+  color: #cfcfcf;
+  background: #5c5c5c;
+  box-shadow:
+    inset 2px 2px 0 #777777,
+    inset -2px -2px 0 #3d3d3d;
+}
+
+.pet-tabs--shop {
+  margin-bottom: 8px;
+}
+
+.pet-locked {
+  font-family: var(--font-pixel);
+  font-size: 1.1875rem;
+  line-height: 1;
+  color: #5a5750;
+  text-align: right;
+}
+
+.pet-side {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+/* ---------- Focus timer ---------- */
+.pet-focus .panel-title {
+  margin-bottom: 6px;
+}
+
+.focus-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.focus-time {
+  flex: none;
+  min-width: 4.2ch;
+  padding: 2px 10px 4px;
+  font-family: var(--font-pixel);
+  font-size: 2.75rem;
+  line-height: 1;
+  color: #d9f5c9;
+  background: #1f1f1f;
+  border: 2px solid var(--stone-deep);
+  box-shadow: inset 2px 2px 0 #000000;
+  text-align: center;
+}
+
+.focus-time--running {
+  color: var(--splash);
+}
+
+.focus-button {
+  flex: 1;
+}
+
+.focus-note {
+  margin-bottom: 6px;
+  font-family: var(--font-pixel);
+  font-size: 1.25rem;
+  line-height: 1.15;
+}
+
+.pet-focus .hint {
+  margin-bottom: 0;
+}
+
+/* Wide screens: the room on the left, care on the right. */
+@media (min-width: 860px) {
+  .pet-body {
+    grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+    align-items: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pet-bar-fill--low {
+    animation: none;
+  }
+
+  .pet-love-fill,
+  .pet-bar-fill {
+    transition: none;
+  }
+}

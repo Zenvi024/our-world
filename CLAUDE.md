@@ -410,13 +410,58 @@ These answer the open questions in section 12 and take priority over the working
 ### Milestone 5 (ship) — done
 - Merged to `main`; the keep-alive workflow is `.github/workflows/keep-alive.yml` (needs the `SUPABASE_URL` and `SUPABASE_ANON_KEY` repository secrets); the gift QR code is `gift/our-little-world-qr.png` (remake with `npm run qr`).
 
+### "Daily life" round (November 11, 2026) — on the preview branch, not yet merged
+Zen chose these from a list of suggestions. They need `supabase/migration-5.sql`.
+- **Play screen:** tappable capybaras (they hop and pop a heart); a "Send…" menu with Poke, Hug, Kiss, Miss you, Eat na, and Drink your water; a Good night / Good morning button (the other person is told, and Zs rise from the roof); a campfire past the trees that is lit on days both visit, roars while both are online, and tells its streak when tapped; a sky that follows Manila time (dawn, day, dusk, night with stars and a moon).
+- **Memory Chest:** Take me back (a random memory), Favorites, and Search.
+- **Letters:** sealed "open when…" letters shown as envelopes, drafts kept on the device, and a pointer to a sealed letter when your own hearts drop to 2 or fewer.
+- **Quests:** steps (a checklist inside each quest).
+- **Ledger:** tap a line to edit it, treats that nobody owes, and totals for the month.
+- **New hotbar slots:** Lists (shared lists kept in chests) and Question of the Day (answers stay hidden until both have answered).
+- **Hotbar:** the selected item's name floats above the bar.
+- **Sounds and motion:** a chest creak, a page turn, a pop when a photo lands, a swaying lily loader.
+- **Avatars:** each person picks a capybara (Settings), shown beside their name on the meters.
+- **Live updates:** a private Realtime channel carries "something changed" pings and who is online; the once-a-minute check remains as a fallback. Not testable from the cloud session.
+- **Notifications:** an opt-in switch in Settings; they appear only while the site is open in the background (no push service). Not testable from the cloud session.
+- **Settings:** a storage meter with an editable plan size, and Backup (one data file, plus photos as ZIP files).
+- **Tidy-up:** unused icons and dead code removed. The style sheets are still layered from the two look changes; merging them into one is still to do.
+- **Chosen for later by Zen:** the first-entry book for Jay (he will plan it first). **Declined:** a countdown sign and quest savings.
+
+### Happybara and night mode (November 11, 2026) — on the preview branch, not yet merged
+Zen asked for "everything about" Happybara, and for the Good night button to become a night-mode switch. Needs `supabase/migration-6.sql`.
+- **Happybara** (hotbar egg, route `#/pet`): one shared capybara in a pixel room. Four needs run down with the clock, even while the site is closed: hunger (10 hours), thirst (6), fun (14), clean (30). Feed, Water, Play, and Bathe earn coins (2, 3, 5, 8) only when the need is below 85; feeding uses one meal from the pantry. Tapping the pet cuddles it (love +1, and 1 coin at most once an hour). Love raises its level (30 per level).
+- **Shop:** food, furniture, and hats. (The first prices were replaced in the expansion below; they now live in the `pet_shop` table.)
+- The pet sleeps from 10:00 PM to 6:00 AM Manila time (in its bed, if it has one), bathes in the tub if it has one, looks sad when a need is nearly empty, can be renamed (tap its name), and keeps a diary of who did what. A pop-up says when it needs something (at most once every 4 hours per device).
+- Everything goes through the database functions `pet_care`, `pet_buy`, `pet_wear`, and `pet_rename`, so coins cannot be invented from the browser.
+- **Night mode:** the moon button on the Play screen (and a switch in Settings, under Look) turns the scene to night and the whole site to a dark slate-blue palette (`src/styles/night.css`, `src/lib/theme.js`). Remembered per device. The book, quest board, sign, and photo frame keep their materials and are dimmed.
+- **Good night and Good morning** moved into the "Send…" menu. They still set who is asleep (Zs on the roof, "zZ" beside the name), and sleep now wears off by itself after 12 hours.
+
+### Happybara expansion, focus timer, angry cats, and Our Reviews (November 11, 2026) — on the preview branch, not yet merged
+Zen wants to play Happybara with Jay "for many months," so the game was made much bigger and dearer. Needs `supabase/migration-7.sql` (after 6).
+- **The house:** five rooms with tabs above the picture: living room (free), kitchen (250 coins, level 3), bedroom (450, level 6), bathroom (700, level 10), garden (1,000, level 15). Each has its own furniture (37 pieces in all). Feeding moves to the kitchen, baths to the bathroom tub, play to the garden, and sleep to the bedroom bed, once those exist.
+- **Shop sections:** Food (meals, plus treats that turn coins into love), Rooms, Decor (furniture by room), Walls (5 wallpapers and 4 floors, applied to the room you are standing in), and Outfits (16 hats and 8 accessories; one of each can be worn).
+- **Prices and level gates live only in the `pet_shop` table** (78 rows, about 10,800 coins in all). To retune, update that table; the site reads it. Names and pictures are keyed by `item_key` in `src/data/pet.js`, `src/art/rooms.js`, and `src/art/outfits.js`.
+- **Income:** care as before; a **teamwork bonus** of 10 coins the first time each day both have cared; a **daily gift** of 5 coins each; and the **focus timer**.
+- **Focus timer** (on the Happybara screen): 25 minutes on the database's clock, so it keeps going when the site is closed. Finishing pays 8 coins and 2 love, up to 6 paid sessions a day each. It finishes itself from any screen and shows a pop-up. It cannot tell whether you really focused; it only requires the 25 minutes to pass.
+- **Tricks** are learned at levels 3, 6, 10, and 15 and show when the pet is tapped.
+- **Angry cats** replaced the hunger meter: five cats on the right of the meters, happy by default; tap to turn 1 to 5 of them angry and red (`moods.angry`). The other person gets a lighthearted pop-up for each change, and another when the cats are happy again. The old `hunger` column is no longer used.
+- **Title screen:** three capybaras with name tags. Zen's and Jay's wear the hat of the avatar each chose in Settings; the small one is Happybara in whatever it is wearing. The two big ones are named **Dook** (Zen's) and **Boop** (Jay's); the tags are matched by display name in `src/screens/title.js`, so if a display name changes, update `CAPYBARA_NAMES` there.
+- **Our Reviews** (hotbar star; all nine slots are now used): cafés, restaurants, movies, shows, places. Each review has a name, where, a date, and separate 1-to-5 stars and words from each person, with filters, "Best first," and an average. Tables `reviews` and `review_ratings`.
+- **Fixed:** the loader on the letter shelf wrapped and overflowed; night-mode menus lost their arrow.
+
+### Play-screen tidy-up and fuller reviews (November 11, 2026) — on the preview branch, not yet merged
+Needs `supabase/migration-8.sql` (after 7).
+- **Night switch:** now a square sun-or-moon button under the speaker on the Play screen (the Settings switch stays).
+- **"Our album" button:** a dimmed "Soon" button beside "Send…" under Play. It is a placeholder for the **anniversary album**: the first-entry book, an album of their memories through the years, which Zen will design together with Claude later. Tapping it only says it is still being made.
+- **Our Reviews, fuller:** up to 6 photos per review (same compression and HEIC handling as memories; files live in the private bucket under `reviews/<review id>/`), shown on the card and in the snapshot frame; a price level (₱ to ₱₱₱); "would go again" / "would watch again" from each person; a search box; "Both loved it!" and "Split decision!" badges; and a button to open that day in the Memory Chest. Review photos count toward the storage meter, and reviews are in the data backup (their photo files are not in the photo ZIPs yet).
+
 ### Advice given on a private chat (Zen asked; not built yet)
 Feasible as a later milestone: a messages table, live updates through Supabase Realtime, emoji from the normal keyboard, and photos through the existing photo pipeline. The catch is notifications: without them a message is only seen when the site is open. Push notifications on iPhone need the site added to the Home Screen, permission granted, and a small server function with its own keys. Messages would be private to the two accounts but not end-to-end encrypted. Recommended after the anniversary, starting without push.
 
 ### Still to do, in this order (Zen asked that none of these be forgotten)
 1. **Private chat** (see the advice above), if Zen confirms.
-2. **"Happybara" virtual pet** (new hotbar slot, perhaps an egg icon): a Tamagotchi-style capybara the two care for together. It persists and keeps running: it has needs (food, water), and they can feed it, play with it, bathe it, and tap it for reactions. Caring for it earns points, which buy food, things for the capybara, and furniture for the house. Zen left the specifics to the builder. Needs its own tables (a third SQL file).
-4. **Seasons for the title screen:** a way to switch between spring (current), autumn, and winter versions of the scene.
-5. **Night mode:** a dark version of the scene, and a dark mode for the whole site that changes the palette and overall vibe.
-6. **Reminders for upcoming dates** beyond goals and the anniversary (ties into Batch 2 date invitations).
-7. Batch 2 as written in section 5: Anniversary mode, crafting table date generator, date invitations.
+2. **Seasons for the title screen:** a way to switch between spring (current), autumn, and winter versions of the scene.
+3. **Reminders for upcoming dates** beyond goals and the anniversary (ties into Batch 2 date invitations).
+4. Batch 2 as written in section 5: Anniversary mode, crafting table date generator, date invitations.
+5. **The anniversary album** (the first-entry book: an album of their memories through the years, opened from the dimmed "Our album" button on the Play screen). Zen will design it with Claude.
+6. Merging the layered style sheets into one.

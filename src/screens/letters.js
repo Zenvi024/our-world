@@ -3,12 +3,30 @@ import { pixelArt } from '../art/pixel.js';
 import { ICON_LETTERS, LILY } from '../art/sprites.js';
 import { todayManila, isValidDate } from '../lib/dates.js';
 import { getUserId, loadMemberNames, loadProfile } from '../session.js';
-import { fetchLetters, sendLetter, markLetterRead, cancelLetter, fetchComments, addComment, removeComment } from '../data/letters.js';
+import { fetchLetters, sendLetter, markLetterRead, cancelLetter, fetchComments, addComment, removeComment, fetchSeals } from '../data/letters.js';
+import { lilyLoader } from '../components/loader.js';
 import { fetchHearts } from '../data/hearts.js';
 import { checkAdvancements } from '../data/advancements.js';
 import { openModal, confirmDialog } from '../components/modal.js';
 import { createHeartButton } from '../components/heartButton.js';
-import { playDone } from '../lib/sound.js';
+import { playDone, playPage } from '../lib/sound.js';
+
+const DRAFT_KEY = 'our-world.letter-draft';
+const readDraft = () => {
+  try {
+    return JSON.parse(localStorage.getItem(DRAFT_KEY)) || {};
+  } catch {
+    return {};
+  }
+};
+const writeDraft = (draft) => {
+  try {
+    if (draft) localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    else localStorage.removeItem(DRAFT_KEY);
+  } catch {
+    // Without storage, drafts simply are not kept.
+  }
+};
 
 const manila = (options) => new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Manila', ...options });
 // "November 13, 2026"
@@ -20,9 +38,10 @@ const momentText = (iso) =>
 const COVERS = ['green', 'rose', 'blue', 'plum', 'amber'];
 
 // Where a letter you sent is on its journey.
-function journey(letter) {
+function journey(letter, seal) {
   if (letter.cancelled) return { label: 'Taken back', tone: 'quiet' };
-  if (letter.read_at) return { label: 'Read', tone: 'done' };
+  if (letter.read_at) return { label: seal ? 'Opened' : 'Read', tone: 'done' };
+  if (seal) return { label: `Sealed: open when ${seal}`, tone: 'waiting' };
   if (letter.delivered) return { label: 'Delivered', tone: 'done' };
   if (letter.delivery_mode === 'surprise') return { label: 'Drifting…', tone: 'waiting' };
   return { label: `Arrives ${momentText(letter.deliver_at)}`, tone: 'waiting' };
@@ -127,6 +146,7 @@ function openLetter({ letter, names, hearts, onChange }) {
     }
   }
 
+  playPage();
   loadComments();
   if (letter.recipient_id === me && letter.delivered && !letter.read_at) {
     markLetterRead(letter.id)
@@ -142,13 +162,18 @@ function openLetter({ letter, names, hearts, onChange }) {
 
 // The writing desk: a blank page, and three ways to send it.
 function openCompose({ partnerName, myName, onSent }) {
-  const title = h('input', { class: 'input page-input', id: 'letter-title', type: 'text', maxlength: '200', placeholder: 'A title (optional)' });
-  const body = h('textarea', { class: 'input page-input page-textarea', id: 'letter-body', rows: '9', maxlength: '50000', placeholder: `Dear ${partnerName},`, required: true });
+  // An unfinished letter is kept on this device until it is sent or thrown away.
+  const draft = readDraft();
+  const title = h('input', { class: 'input page-input', id: 'letter-title', type: 'text', maxlength: '200', placeholder: 'A title (optional)', value: draft.title ?? '' });
+  const body = h('textarea', { class: 'input page-input page-textarea', id: 'letter-body', rows: '9', maxlength: '50000', placeholder: `Dear ${partnerName},`, required: true }, draft.body ?? '');
+  const keepDraft = () => writeDraft(title.value || body.value ? { title: title.value, body: body.value } : null);
+  title.addEventListener('input', keepDraft);
+  body.addEventListener('input', keepDraft);
   const status = h('p', { class: 'status status--error', role: 'alert' });
   const send = h('button', { class: 'btn btn--green', type: 'submit' }, 'Send');
 
   const radio = (value, checked = false) => h('input', { type: 'radio', name: 'letter-mode', id: `letter-mode-${value}`, value, checked });
-  const modes = { now: radio('now', true), scheduled: radio('scheduled'), surprise: radio('surprise') };
+  const modes = { now: radio('now', true), scheduled: radio('scheduled'), surprise: radio('surprise'), sealed: radio('sealed') };
 
   const date = h('input', { class: 'input', id: 'letter-date', type: 'date', value: todayManila(), min: todayManila() });
   const hour = h('select', { class: 'input', id: 'letter-hour', 'aria-label': 'Hour' }, Array.from({ length: 12 }, (_, i) => h('option', { value: String(i + 1), selected: i + 1 === 8 }, String(i + 1))));
@@ -176,9 +201,20 @@ function openCompose({ partnerName, myName, onSent }) {
     h('p', { class: 'hint' }, 'The exact moment is picked in secret, between 8:00 AM and 10:00 PM. Not even you will know.'),
   );
 
+  const openWhen = h('input', { class: 'input', id: 'letter-open-when', type: 'text', maxlength: '80', placeholder: 'you are sad', list: 'open-when-ideas' });
+  const sealedFields = h(
+    'div',
+    { class: 'field', hidden: true },
+    h('label', { for: 'letter-open-when' }, 'Open when…'),
+    openWhen,
+    h('datalist', { id: 'open-when-ideas' }, ['you are sad', 'you miss me', 'you cannot sleep', 'you need a laugh', 'you are proud of yourself'].map((idea) => h('option', { value: idea }))),
+    h('p', { class: 'hint' }, 'It arrives right away as a sealed envelope with this label, to open whenever the moment comes.'),
+  );
+
   const showFields = () => {
     whenFields.hidden = !modes.scheduled.checked;
     surpriseFields.hidden = !modes.surprise.checked;
+    sealedFields.hidden = !modes.sealed.checked;
   };
   Object.values(modes).forEach((input) => input.addEventListener('change', showFields));
 
@@ -211,13 +247,20 @@ function openCompose({ partnerName, myName, onSent }) {
           } else if (modes.surprise.checked) {
             letter.mode = 'surprise';
             letter.days = Number(range.value);
+          } else if (modes.sealed.checked) {
+            letter.openWhen = openWhen.value.trim().replace(/^open when\s+/i, '');
+            if (!letter.openWhen) {
+              status.textContent = 'Finish the label: open when…';
+              return;
+            }
           }
           send.disabled = true;
           try {
             await sendLetter(letter);
+            writeDraft(null);
             playDone();
             modal.close();
-            onSent(letter.mode);
+            onSent(letter.openWhen ? 'sealed' : letter.mode);
           } catch (error) {
             status.textContent = friendlyError(error);
             send.disabled = false;
@@ -238,9 +281,11 @@ function openCompose({ partnerName, myName, onSent }) {
         h('label', { class: 'check', for: 'letter-mode-now' }, modes.now, 'Deliver it now'),
         h('label', { class: 'check', for: 'letter-mode-scheduled' }, modes.scheduled, 'Deliver it on a day and time'),
         h('label', { class: 'check', for: 'letter-mode-surprise' }, modes.surprise, 'Surprise: a message in a bottle'),
+        h('label', { class: 'check', for: 'letter-mode-sealed' }, modes.sealed, 'Sealed: an "open when…" letter'),
       ),
       whenFields,
       surpriseFields,
+      sealedFields,
       status,
       h(
         'div',
@@ -251,28 +296,35 @@ function openCompose({ partnerName, myName, onSent }) {
             class: 'btn',
             type: 'button',
             onclick: async () => {
-              if (body.value.trim() && !(await confirmDialog({ message: 'Throw this letter away?', confirmLabel: 'Throw away', danger: true }))) return;
+              // The words are kept as a draft unless you choose to throw them away.
+              if (body.value.trim() && (await confirmDialog({ message: 'Keep this letter as a draft for later?', confirmLabel: 'Keep draft' }))) {
+                modal.close();
+                return;
+              }
+              writeDraft(null);
               modal.close();
             },
           },
-          'Cancel',
+          'Close',
         ),
         send,
       ),
     ),
   );
+  playPage();
   body.focus();
 }
 
 // The letters screen: a shelf of letters you received, and the ones you sent.
 export function createLetters() {
   const me = getUserId();
-  const shelf = h('div', { class: 'shelf' });
+  const shelf = h('div', { class: 'shelf' }, lilyLoader('Dusting the shelf…'));
   const sentList = h('div', { class: 'sent-list' });
   const status = h('p', { class: 'status', role: 'status' });
   let letters = [];
   let names = new Map();
   let hearts = new Map();
+  let seals = new Map();
   let myName = 'me';
 
   const say = (message, isError = false) => {
@@ -282,6 +334,12 @@ export function createLetters() {
 
   const open = (letter) => openLetter({ letter, names, hearts, onChange: load });
 
+  // A sealed letter asks before it is opened for the first time.
+  async function openSealed(letter) {
+    const sure = await confirmDialog({ message: `Open the letter for when ${seals.get(letter.id)}?`, confirmLabel: 'Open it' });
+    if (sure) open(letter);
+  }
+
   function render() {
     const inbox = letters.filter((letter) => letter.recipient_id === me);
     const sent = letters.filter((letter) => letter.sender_id === me);
@@ -289,7 +347,14 @@ export function createLetters() {
     shelf.replaceChildren(
       ...(inbox.length
         ? inbox.map((letter, i) =>
-            h(
+            seals.has(letter.id) && !letter.read_at
+              ? h(
+                  'button',
+                  { class: 'letter-book letter-envelope', type: 'button', 'aria-label': `Sealed letter: open when ${seals.get(letter.id)}`, onclick: () => openSealed(letter) },
+                  h('span', { class: 'letter-flap', 'aria-hidden': 'true' }),
+                  h('span', { class: 'letter-label' }, `Open when ${seals.get(letter.id)}`),
+                )
+              : h(
               'button',
               {
                 class: `letter-book letter-book--${COVERS[i % COVERS.length]}${letter.read_at ? '' : ' letter-book--new'}`,
@@ -315,7 +380,7 @@ export function createLetters() {
     sentList.replaceChildren(
       ...(sent.length
         ? sent.map((letter) => {
-            const state = journey(letter);
+            const state = journey(letter, seals.get(letter.id));
             const waiting = !letter.delivered && !letter.cancelled;
             return h(
               'article',
@@ -355,12 +420,14 @@ export function createLetters() {
 
   async function load() {
     try {
-      const [rows, memberNames, heartMap, profile] = await Promise.all([
+      const [rows, memberNames, heartMap, profile, sealMap] = await Promise.all([
         fetchLetters(),
         loadMemberNames(),
         fetchHearts('letter').catch(() => new Map()),
         loadProfile(),
+        fetchSeals().catch(() => new Map()),
       ]);
+      seals = sealMap;
       letters = rows;
       names = memberNames;
       hearts = heartMap;
@@ -389,7 +456,9 @@ export function createLetters() {
               myName,
               onSent: async (mode) => {
                 say(
-                  mode === 'surprise'
+                  mode === 'sealed'
+                    ? 'Sealed and delivered, waiting for its moment.'
+                    : mode === 'surprise'
                     ? 'Sealed in a bottle and set adrift.'
                     : mode === 'scheduled'
                       ? 'Your letter is waiting for its day.'

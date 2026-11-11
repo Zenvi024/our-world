@@ -148,3 +148,36 @@
 .notice-text {
   font-size: 1rem;
 }
+
+/* Name tags that follow the capybaras. */
+.name-tags {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.name-tag {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  padding: 0 4px;
+  font-family: var(--font-pixel);
+  font-size: 1.1875rem;
+  line-height: 1;
+  white-space: nowrap;
+  color: #ffffff;
+  text-shadow:
+    1px 1px 0 rgba(0, 0, 0, 0.8),
+    -1px 1px 0 rgba(0, 0, 0, 0.8),
+    1px -1px 0 rgba(0, 0, 0, 0.8),
+    -1px -1px 0 rgba(0, 0, 0, 0.8);
+  will-change: transform;
+}
+
+.name-tag--pet {
+  color: var(--splash);
+}
+
+.name-tag:empty {
+  display: none;
+}

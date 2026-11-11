@@ -1,13 +1,22 @@
 import { h, friendlyError } from '../lib/dom.js';
-import { isConfigured } from '../supabase.js';
-import { getSession, signIn } from '../session.js';
+import { isConfigured, supabase } from '../supabase.js';
+import { getSession, signIn, loadMembers } from '../session.js';
+import { AVATAR_HATS } from '../art/outfits.js';
 import { cachedSplash, fetchSplash } from '../data/splash.js';
 import { startLandscape } from '../art/landscape.js';
 import { pixelArt } from '../art/pixel.js';
-import { ICON_HEART } from '../art/sprites.js';
-import { playPoke } from '../lib/sound.js';
+import { ICON_HEART, ICON_MOON, ICON_SUN, ICON_ALBUM, LILY } from '../art/sprites.js';
+import { playPoke, playDone, playPop } from '../lib/sound.js';
 import { createMusicButton } from '../components/musicButton.js';
-import { loadPartner, sendPoke } from '../data/pokes.js';
+import { openModal } from '../components/modal.js';
+import { showToast } from '../components/toast.js';
+import { plural } from '../lib/dom.js';
+import { onLive, isPartnerOnline } from '../lib/live.js';
+import { getUserId } from '../session.js';
+import { loadPartner, sendPoke, POKES, POKE_MENU } from '../data/pokes.js';
+import { fetchMoods, setAsleep, isAsleep } from '../data/moods.js';
+import { isNight, setNight } from '../lib/theme.js';
+import { recordVisit, campfireState } from '../data/visits.js';
 
 const SPLASH_SECONDS = 5;
 
@@ -142,35 +151,133 @@ function createNotice(message, onClose) {
   return overlay;
 }
 
-// "Poke Jay": a tiny hello that pops up on the other person's screen.
-function createPokeButton() {
-  const label = h('span', null, 'Poke');
-  const button = h('button', { class: 'btn poke-button', type: 'button', hidden: true, 'data-quiet': 'true' }, pixelArt(ICON_HEART), label);
+// The row under Play: send a little something, and (one day) open the album.
+function createGreetings(scene) {
+  const sendLabel = h('span', null, 'Send…');
+  const send = h('button', { class: 'btn greet-button', type: 'button' }, pixelArt(ICON_HEART), sendLabel);
+  // The anniversary album is still being made; its button waits here, dimmed.
+  const album = h(
+    'button',
+    { class: 'btn greet-button greet-button--soon', type: 'button', 'aria-disabled': 'true', 'data-quiet': 'true', title: 'Coming soon' },
+    pixelArt(ICON_ALBUM),
+    h('span', null, 'Our album'),
+    h('span', { class: 'soon-tag' }, 'Soon'),
+  );
+  const note = h('p', { class: 'greet-note', role: 'status' });
+  const row = h('div', { class: 'greet', hidden: true }, h('div', { class: 'greet-row' }, send, album), note);
+  let partner = null;
+  let moods = new Map();
+
+  const say = (message) => {
+    note.textContent = message;
+    setTimeout(() => {
+      if (note.textContent === message) showSleepers();
+    }, 2600);
+  };
+
+  // Zs rise from the roof for each of you who has said good night.
+  function showSleepers() {
+    const mine = isAsleep(moods.get(getUserId()));
+    const theirs = partner && isAsleep(moods.get(partner.id));
+    note.textContent = theirs ? `${partner.name} is asleep.` : '';
+    scene.setSleepers(Number(mine) + Number(Boolean(theirs)));
+  }
+
+  async function refresh() {
+    try {
+      moods = await fetchMoods();
+      showSleepers();
+    } catch {
+      // The note simply stays empty until the meters are set up.
+    }
+  }
+
+  async function sendOne(kind) {
+    try {
+      // Good night and good morning also tuck you in and wake you up.
+      if (kind === 'good_night' || kind === 'good_morning') await setAsleep(kind === 'good_night');
+      await sendPoke(partner.id, kind);
+      if (kind === 'good_night') playDone();
+      else playPoke();
+      if (kind === 'good_night' || kind === 'good_morning') await refresh();
+      say(kind === 'good_night' ? 'Sweet dreams!' : kind === 'good_morning' ? 'Good morning!' : `Sent to ${partner.name}!`);
+    } catch {
+      say('That could not be sent. Please try again.');
+    }
+  }
+
+  album.addEventListener('click', () => say('Our album is still being made. Soon!'));
+
+  send.addEventListener('click', () => {
+    const modal = openModal(
+      { label: `Send ${partner.name} something`, className: 'small-panel' },
+      h('h2', { class: 'panel-title' }, `Send ${partner.name}…`),
+      h(
+        'div',
+        { class: 'poke-menu' },
+        POKE_MENU.map((kind) =>
+          h(
+            'button',
+            {
+              class: 'btn poke-choice',
+              type: 'button',
+              'data-quiet': 'true',
+              onclick: () => {
+                modal.close();
+                sendOne(kind);
+              },
+            },
+            pixelArt(POKES[kind].icon),
+            POKES[kind].label,
+          ),
+        ),
+      ),
+      h('div', { class: 'button-row' }, h('button', { class: 'btn', type: 'button', onclick: () => modal.close() }, 'Cancel')),
+    );
+  });
+
   loadPartner()
-    .then((partner) => {
-      if (!partner) return;
-      label.textContent = `Poke ${partner.name}`;
-      button.hidden = false;
-      button.addEventListener('click', async () => {
-        button.disabled = true;
-        try {
-          await sendPoke(partner.id);
-          playPoke();
-          label.textContent = 'Poked!';
-        } catch (error) {
-          label.textContent = 'Could not poke';
-        }
-        setTimeout(() => {
-          label.textContent = `Poke ${partner.name}`;
-          button.disabled = false;
-        }, 2500);
-      });
+    .then((found) => {
+      if (!found) return;
+      partner = found;
+      sendLabel.textContent = `Send ${partner.name}…`;
+      refresh();
     })
     .catch(() => {
-      // The button stays hidden if the partner cannot be loaded.
+      // The row stays hidden if the partner cannot be loaded.
+    })
+    .finally(() => {
+      row.hidden = !partner;
     });
+
+  return { el: row, stop: onLive('moods', refresh) };
+}
+
+// A square sun-or-moon button under the speaker: the sky turns to night
+// and the whole site goes dark, or back again.
+function createNightButton(onSwitch) {
+  const button = h('button', { class: 'btn night-button', type: 'button' });
+  const show = () => {
+    const on = isNight();
+    // The icon shows what a tap will bring: the sun by night, the moon by day.
+    button.replaceChildren(pixelArt(on ? ICON_SUN : ICON_MOON));
+    button.setAttribute('aria-pressed', String(on));
+    button.setAttribute('aria-label', on ? 'Night mode is on. Tap for day mode.' : 'Night mode is off. Tap for night mode.');
+    button.title = on ? 'Day mode' : 'Night mode';
+  };
+  button.addEventListener('click', () => {
+    setNight(!isNight());
+    show();
+    onSwitch();
+  });
+  show();
   return button;
 }
+
+// The capybaras have names of their own: Zen's is Dook and Jay's is Boop.
+// (Anyone else's capybara simply carries their display name.)
+const CAPYBARA_NAMES = { zen: 'Dook', jay: 'Boop' };
+const capybaraName = (displayName) => CAPYBARA_NAMES[String(displayName).trim().toLowerCase()] ?? displayName;
 
 // Shows the title screen inside root. Returns a function that cleans it up.
 export function mountTitle(root, { onEnter }) {
@@ -178,6 +285,7 @@ export function mountTitle(root, { onEnter }) {
   const splash = createSplash();
   const music = createMusicButton();
   const signedIn = isConfigured && Boolean(getSession());
+  const greetSlot = h('span', { hidden: true });
   let dialog = null;
 
   const closeDialog = () => {
@@ -237,14 +345,79 @@ export function mountTitle(root, { onEnter }) {
         h('p', { class: 'logo-by' }, 'by Zen & Jay'),
       ),
       playButton,
-      signedIn && createPokeButton(),
+      greetSlot,
       h('p', { class: 'title-foot' }, 'Since November 13, 2024'),
     ),
     music.el,
+    createNightButton(() => scene.refresh()),
   );
 
   root.replaceChildren(screen);
-  const stopLandscape = startLandscape(canvas);
+  // Name tags float above the capybaras: the two of you, and your pet.
+  const tags = h('div', { class: 'name-tags', 'aria-hidden': 'true' });
+  canvas.after(tags);
+  const scene = startLandscape(canvas, {
+    onMove(spots) {
+      spots.forEach((spot, i) => {
+        const tag = tags.children[i];
+        if (tag) tag.style.transform = `translate(${Math.round(spot.x)}px, ${Math.round(spot.y)}px) translate(-50%, -100%)`;
+      });
+    },
+  });
+  const stops = [];
+
+  // Who is in the scene: each of you wears your avatar's hat, and the little
+  // one wears whatever Happybara has on.
+  async function gatherCast() {
+    try {
+      const me = getUserId();
+      const [members, pet] = await Promise.all([loadMembers(), supabase.from('pet').select('*').eq('id', 1).maybeSingle()]);
+      const people = [...members].sort(([a], [b]) => Number(b === me) - Number(a === me)).slice(0, 2);
+      const cast = people.map(([, person], i) => ({ name: capybaraName(person.name), hat: AVATAR_HATS[person.avatar] ?? (i ? 'hat_blossom' : 'hat_orange') }));
+      while (cast.length < 2) cast.push({ name: '', hat: cast.length ? 'hat_blossom' : 'hat_orange' });
+      cast.push({ name: pet.data?.name ?? 'Happybara', hat: pet.data?.wearing, accessory: pet.data?.accessory, baby: true });
+      tags.replaceChildren(...cast.map((member) => h('span', { class: `name-tag${member.baby ? ' name-tag--pet' : ''}` }, member.name)));
+      scene.setCast(cast);
+    } catch {
+      // The scene keeps its three unnamed capybaras.
+    }
+  }
+
+  // The campfire burns on days you both visit, and roars while you are both here.
+  let fireState = { lit: false, streak: 0 };
+  async function tendFire() {
+    try {
+      fireState = await campfireState();
+    } catch {
+      // The fire waits until visits are set up.
+    }
+    scene.setCampfire({ lit: fireState.lit, roaring: fireState.lit && isPartnerOnline() });
+  }
+  if (signedIn) {
+    const greetings = createGreetings(scene);
+    greetSlot.replaceWith(greetings.el);
+    stops.push(greetings.stop, onLive('visits', tendFire), onLive('presence', tendFire), onLive('pet', gatherCast), onLive('moods', gatherCast));
+    gatherCast();
+    recordVisit().catch(() => {}).then(tendFire);
+  }
+
+  // Tapping the scene: capybaras hop and blush, and the campfire tells its story.
+  screen.addEventListener('click', (event) => {
+    if (event.target.closest('button, a, input, .overlay')) return;
+    const hit = scene.tap(event.clientX, event.clientY);
+    if (hit === 'capybara') playPop();
+    if (hit === 'campfire') {
+      showToast({
+        header: fireState.lit ? 'The campfire is burning' : 'The campfire is waiting',
+        text: fireState.lit
+          ? `Lit ${plural(fireState.streak, 'day')} in a row.`
+          : signedIn
+            ? 'It lights on days you both visit.'
+            : 'It lights when you are both home.',
+        icon: LILY,
+      });
+    }
+  });
 
   splash.setLines(cachedSplash());
   if (isConfigured && getSession()) {
@@ -258,7 +431,8 @@ export function mountTitle(root, { onEnter }) {
   document.fonts?.ready.then(() => splash.setLines(cachedSplash()));
 
   return () => {
-    stopLandscape();
+    scene.stop();
+    stops.forEach((stop) => stop());
     splash.stop();
     music.stop();
   };

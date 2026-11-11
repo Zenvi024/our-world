@@ -13,7 +13,16 @@ import {
   isAnniversary,
   MONTH_NAMES,
 } from '../lib/dates.js';
-import { fetchMemoriesBetween, groupByDate, photosOf, coverOf } from '../data/memories.js';
+import {
+  fetchMemoriesBetween,
+  groupByDate,
+  photosOf,
+  coverOf,
+  fetchFavorites,
+  searchMemories,
+  randomMemoryDate,
+} from '../data/memories.js';
+import { lilyLoader } from '../components/loader.js';
 import { signedUrls } from '../data/photos.js';
 import { openModal } from '../components/modal.js';
 import { openChest } from './chest.js';
@@ -129,6 +138,96 @@ export function createCalendar() {
     }
   }
 
+  const note2 = h('p', { class: 'calendar-tip', role: 'status' });
+
+  // Shows the month of a date, and optionally opens that day's chest.
+  function goTo(date, open = true) {
+    view = { year: parts(date).year, month: parts(date).month };
+    show();
+    if (open) openDay(date);
+  }
+
+  // Opens a random day that has a memory.
+  async function takeMeBack() {
+    try {
+      const date = await randomMemoryDate();
+      if (date) goTo(date);
+      else note2.textContent = 'There are no memories to go back to yet.';
+    } catch (error) {
+      note2.textContent = friendlyError(error);
+    }
+  }
+
+  // A list of memories to pick from (used by Favorites and Search).
+  function openResults(heading, find, emptyText) {
+    const list = h('div', { class: 'result-list' }, lilyLoader('Looking…'));
+    const modal = openModal(
+      { label: heading, className: 'results' },
+      h('h2', { class: 'panel-title' }, heading),
+      list,
+      h('div', { class: 'button-row' }, h('button', { class: 'btn', type: 'button', onclick: () => modal.close() }, 'Close')),
+    );
+    find()
+      .then(async (memories) => {
+        const urls = await signedUrls(memories.map((memory) => coverOf([memory])?.thumb_path).filter(Boolean));
+        list.replaceChildren(
+          ...(memories.length
+            ? memories.map((memory) => {
+                const cover = coverOf([memory]);
+                return h(
+                  'button',
+                  {
+                    class: 'result',
+                    type: 'button',
+                    onclick: () => {
+                      modal.close();
+                      goTo(memory.memory_date);
+                    },
+                  },
+                  h('span', { class: 'photo-slot result-slot' }, cover && h('img', { src: urls.get(cover.thumb_path) ?? '', alt: '', loading: 'lazy' })),
+                  h(
+                    'span',
+                    { class: 'result-words' },
+                    h('span', { class: 'result-title' }, `${memory.featured ? '★ ' : ''}${memory.title || 'Untitled memory'}`),
+                    h('span', { class: 'result-date' }, longDate(memory.memory_date)),
+                    memory.note && h('span', { class: 'result-note' }, memory.note),
+                  ),
+                );
+              })
+            : [h('p', { class: 'hint' }, emptyText)]),
+        );
+      })
+      .catch((error) => list.replaceChildren(h('p', { class: 'status status--error' }, friendlyError(error))));
+  }
+
+  function openSearch() {
+    const input = h('input', { class: 'input', id: 'search-words', type: 'search', maxlength: '80', placeholder: 'A word from a title or note', required: true });
+    const modal = openModal(
+      { label: 'Search memories', className: 'small-panel' },
+      h(
+        'form',
+        {
+          onsubmit: (event) => {
+            event.preventDefault();
+            const words = input.value.trim();
+            if (!words) return;
+            modal.close();
+            openResults(`Memories with “${words}”`, () => searchMemories(words), 'Nothing matched. Try a different word.');
+          },
+        },
+        h('h2', { class: 'panel-title' }, 'Search memories'),
+        h('div', { class: 'field' }, h('label', { for: 'search-words' }, 'What are you looking for?'), input),
+        h(
+          'div',
+          { class: 'button-row' },
+          h('button', { class: 'btn', type: 'button', onclick: () => modal.close() }, 'Cancel'),
+          h('button', { class: 'btn btn--green', type: 'submit' }, 'Search'),
+        ),
+      ),
+    );
+    input.focus();
+  }
+
   function openJump() {
     const month = h(
       'select',
@@ -195,24 +294,17 @@ export function createCalendar() {
     h(
       'div',
       { class: 'calendar-actions' },
+      h('button', { class: 'btn', type: 'button', onclick: () => goTo(today, false) }, 'Today'),
+      h('button', { class: 'btn', type: 'button', onclick: takeMeBack }, 'Take me back'),
+      h('button', { class: 'btn', type: 'button', onclick: () => openResults('Favorites', fetchFavorites, 'No favorites yet. Open a memory, tap Edit, and mark it as a favorite.') }, 'Favorites'),
+      h('button', { class: 'btn', type: 'button', onclick: openSearch }, 'Search'),
       h(
         'button',
-        {
-          class: 'btn',
-          type: 'button',
-          onclick: () => {
-            view = { year: parts(today).year, month: parts(today).month };
-            show();
-          },
-        },
-        'Today',
-      ),
-      h(
-        'button',
-        { class: 'btn btn--green', type: 'button', onclick: () => openBulkUpload({ onDone: changed }) },
+        { class: 'btn btn--green calendar-add', type: 'button', onclick: () => openBulkUpload({ onDone: changed }) },
         'Add photos',
       ),
     ),
+    note2,
   );
 
   show();

@@ -5,45 +5,93 @@ import { getUserId } from '../session.js';
 import { fetchMemoriesOn, groupByDate, coverOf } from '../data/memories.js';
 import { signedUrls } from '../data/photos.js';
 import { fetchGoals } from '../data/goals.js';
-import { collectPokes, loadPartner } from '../data/pokes.js';
+import { collectPokes, loadPartner, POKES } from '../data/pokes.js';
+import { fetchSeals } from '../data/letters.js';
+import { fetchAnswers } from '../data/questions.js';
+import { ICON_SIGN, ICON_EGG } from '../art/sprites.js';
+import { supabase } from '../supabase.js';
+import { NEEDS, needLevel, FOCUS_MS, myFocusStart, finishFocus } from '../data/pet.js';
 import { showToast } from '../components/toast.js';
 import { playPoke } from './sound.js';
-import { ICON_HEART, ICON_MAP, ICON_LETTERS, ICON_DRUMSTICK, LILY } from '../art/sprites.js';
+import { ICON_HEART, ICON_MAP, ICON_LETTERS, ICON_CAT_HAPPY, ICON_CAT_ANGRY, LILY } from '../art/sprites.js';
 import { fetchMoods, LOW_METER, MAX_METER } from '../data/moods.js';
 import { fetchLetters } from '../data/letters.js';
 
-const MOOD_KEY = 'our-world.mood-seen';
+const MOOD_KEY = 'our-world.hearts-seen';
+const CATS_KEY = 'our-world.cats-seen';
 const LETTERS_KEY = 'our-world.letters-seen';
 
-// Tells you, once per change, when your partner's hearts or hunger run low.
+const CAT_WORDS = [
+  '',
+  'A tiny bit annoyed. A hug should fix it.',
+  'Annoyed. Proceed with snacks.',
+  'Quite annoyed. Tread lightly!',
+  'Very annoyed. Send snacks and kisses.',
+  'Maximum annoyance! Send help (and snacks).',
+];
+
+// Tells you, once per change, when your partner's hearts run low or their
+// cats get angry (and when the cats calm down again).
 async function showPartnerMood() {
   try {
     const partner = await loadPartner();
     const mood = partner && (await fetchMoods()).get(partner.id);
     if (!mood) return;
-    const lowHearts = mood.hearts != null && mood.hearts <= LOW_METER;
-    const lowHunger = mood.hunger != null && mood.hunger <= LOW_METER;
-    if (!lowHearts && !lowHunger) return;
-    if (localStorage.getItem(MOOD_KEY) === mood.updated_at) return;
-    localStorage.setItem(MOOD_KEY, mood.updated_at);
-    if (lowHearts) {
-      showToast({
-        header: `${partner.name} could use some love`,
-        text: `Feeling ${mood.hearts} of ${MAX_METER} hearts right now.`,
-        icon: ICON_HEART,
-        sound: playPoke,
-      });
+
+    const hearts = mood.hearts ?? MAX_METER;
+    if (String(hearts) !== localStorage.getItem(MOOD_KEY)) {
+      localStorage.setItem(MOOD_KEY, String(hearts));
+      if (hearts <= LOW_METER) {
+        showToast({
+          header: `${partner.name} could use some love`,
+          text: `Feeling ${hearts} of ${MAX_METER} hearts right now.`,
+          icon: ICON_HEART,
+          sound: playPoke,
+          notify: true,
+        });
+      }
     }
-    if (lowHunger) {
-      showToast({
-        header: `${partner.name} is hungry`,
-        text: `Down to ${mood.hunger} of ${MAX_METER} on the hunger bar.`,
-        icon: ICON_DRUMSTICK,
-        sound: playPoke,
-      });
+
+    const angry = mood.angry ?? 0;
+    const seen = Number(localStorage.getItem(CATS_KEY) || 0);
+    if (angry !== seen) {
+      localStorage.setItem(CATS_KEY, String(angry));
+      if (angry > 0) {
+        showToast({
+          header: `${partner.name}: ${angry} angry ${angry === 1 ? 'cat' : 'cats'}`,
+          text: CAT_WORDS[angry],
+          icon: ICON_CAT_ANGRY,
+          sound: playPoke,
+          notify: true,
+        });
+      } else {
+        showToast({ header: `${partner.name}’s cats are happy again`, text: 'All five are purring.', icon: ICON_CAT_HAPPY });
+      }
     }
   } catch {
     // The meters may not be set up yet.
+  }
+}
+
+// A focus session that ran out while you were elsewhere is finished here.
+async function checkFocus() {
+  try {
+    if (window.location.hash === '#/pet') return; // that screen finishes its own
+    const started = await myFocusStart();
+    if (!started || Date.now() - new Date(started).getTime() < FOCUS_MS) return;
+    const earned = await finishFocus();
+    showToast({
+      header: 'Focus complete!',
+      text: earned > 0 ? `+${plural(earned, 'coin')} for your pet. Time for a break.` : 'Time for a break.',
+      icon: ICON_EGG,
+      sound: playPoke,
+      notify: true,
+      onClick: () => {
+        window.location.hash = '#/pet';
+      },
+    });
+  } catch {
+    // It will be finished at the next look.
   }
 }
 
@@ -61,10 +109,39 @@ async function showNewLetters(onOpenLetters) {
       text: fresh[0].title || 'Tap to read it.',
       icon: ICON_LETTERS,
       sound: playPoke,
+      notify: true,
       onClick: onOpenLetters,
     });
   } catch {
     // Letters wait for the next check.
+  }
+}
+
+const PET_KEY = 'our-world.pet-told';
+const PET_QUIET_MS = 4 * 3_600_000;
+const PET_LOW = 20;
+const PET_WORDS = { hunger: 'is hungry', thirst: 'is thirsty', fun: 'is bored', clean: 'needs a bath' };
+
+// Tells you when Happybara needs something, at most once every few hours.
+async function showPetNeeds() {
+  try {
+    if (window.location.hash === '#/pet') return;
+    if (Date.now() - Number(localStorage.getItem(PET_KEY) || 0) < PET_QUIET_MS) return;
+    const { data: pet } = await supabase.from('pet').select('*').eq('id', 1).maybeSingle();
+    if (!pet) return;
+    const lowest = Object.keys(NEEDS).sort((a, b) => needLevel(pet, a) - needLevel(pet, b))[0];
+    if (needLevel(pet, lowest) >= PET_LOW) return;
+    localStorage.setItem(PET_KEY, String(Date.now()));
+    showToast({
+      header: `${pet.name} ${PET_WORDS[lowest]}`,
+      text: 'Tap to visit.',
+      icon: ICON_EGG,
+      onClick: () => {
+        window.location.hash = '#/pet';
+      },
+    });
+  } catch {
+    // The pet may not have moved in yet.
   }
 }
 
@@ -84,18 +161,42 @@ export async function showNewPokes() {
     if (pokes.length) {
       const partner = await loadPartner();
       const name = partner?.name ?? 'Your partner';
-      showToast({
-        header: 'Poke!',
-        text: pokes.length === 1 ? `${name} poked you.` : `${name} poked you ${pokes.length} times.`,
-        icon: ICON_HEART,
-        sound: playPoke,
-      });
+      // One pop-up per poke, newest last; a long pile is summed up instead.
+      const shown = pokes.length > 4 ? pokes.slice(-3) : pokes;
+      if (shown.length < pokes.length) {
+        showToast({ header: 'Thinking of you', text: `${name} sent you ${pokes.length} little things.`, icon: ICON_HEART, sound: playPoke, notify: true });
+      }
+      for (const poke of shown) {
+        const kind = POKES[poke.kind] ?? POKES.poke;
+        showToast({ header: kind.label ?? name, text: kind.says(name), icon: kind.icon, sound: playPoke, notify: true });
+      }
     }
   } catch {
     // Pokes wait for the next check.
   }
   await showPartnerMood();
   await showNewLetters(openLetters);
+  await showPetNeeds();
+  await checkFocus();
+}
+
+// When your own hearts run low, points you to a letter saved for such a moment.
+export async function suggestOpenWhen() {
+  try {
+    const me = getUserId();
+    const [letters, seals] = await Promise.all([fetchLetters(), fetchSeals()]);
+    const waiting = letters.find((letter) => letter.recipient_id === me && !letter.read_at && seals.has(letter.id));
+    if (!waiting) return;
+    const partner = await loadPartner();
+    showToast({
+      header: 'A letter for this moment',
+      text: `${partner?.name ?? 'Someone'} left you one to open when ${seals.get(waiting.id)}.`,
+      icon: ICON_LETTERS,
+      onClick: openLetters,
+    });
+  } catch {
+    // Nothing to suggest.
+  }
 }
 
 let pokeTimer = null;
@@ -150,6 +251,22 @@ export async function showLandingNotices({ onOpenDay }) {
     }
   } catch {
     // No reminder today.
+  }
+
+  try {
+    const todays = (await fetchAnswers())[0];
+    if (todays && todays.mine === null) {
+      showToast({
+        header: 'Question of the day',
+        text: todays.question,
+        icon: ICON_SIGN,
+        onClick: () => {
+          window.location.hash = '#/question';
+        },
+      });
+    }
+  } catch {
+    // Questions may not be set up yet.
   }
 
   try {

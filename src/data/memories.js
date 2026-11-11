@@ -1,5 +1,6 @@
 import { supabase } from '../supabase.js';
 import { removeFiles } from './photos.js';
+import { announce } from '../lib/live.js';
 
 // A memory is one entry on one date; it holds one or more photos.
 const FIELDS =
@@ -43,18 +44,21 @@ export async function createMemory({ memory_date, title = null, note = null }) {
     .select(FIELDS)
     .single();
   if (error) throw error;
+  announce('memories');
   return tidy(data);
 }
 
 export async function updateMemory(id, fields) {
   const { error } = await supabase.from('memories').update(fields).eq('id', id);
   if (error) throw error;
+  announce('memories');
 }
 
 export async function deleteMemory(memory) {
   await removeFiles(memory.photos);
   const { error } = await supabase.from('memories').delete().eq('id', memory.id);
   if (error) throw error;
+  announce('memories');
 }
 
 // Every photo on a day, across its memories, in display order.
@@ -86,4 +90,40 @@ export function groupByDate(memories) {
     days.get(memory.memory_date).push(memory);
   }
   return days;
+}
+
+// The memories marked as favorites, newest first.
+export async function fetchFavorites() {
+  const { data, error } = await supabase
+    .from('memories')
+    .select(FIELDS)
+    .eq('featured', true)
+    .order('memory_date', { ascending: false })
+    .limit(200);
+  if (error) throw error;
+  return data.map(tidy);
+}
+
+// Memories whose title, note, or caption contains the words, newest first.
+export async function searchMemories(words) {
+  // Characters that would confuse the search filter are dropped.
+  const safe = words.replace(/[%_,()*\\"']/g, ' ').trim();
+  if (!safe) return [];
+  const pattern = `%${safe.split(/\s+/).join('%')}%`;
+  const { data, error } = await supabase
+    .from('memories')
+    .select(FIELDS)
+    .or(`title.ilike.${pattern},note.ilike.${pattern},caption.ilike.${pattern}`)
+    .order('memory_date', { ascending: false })
+    .limit(60);
+  if (error) throw error;
+  return data.map(tidy);
+}
+
+// A random day that has a memory, or null if there are none yet.
+export async function randomMemoryDate() {
+  const { data, error } = await supabase.from('memories').select('memory_date').limit(3000);
+  if (error) throw error;
+  const days = [...new Set(data.map((row) => row.memory_date))];
+  return days.length ? days[Math.floor(Math.random() * days.length)] : null;
 }

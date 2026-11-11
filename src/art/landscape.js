@@ -1,3 +1,4 @@
+import { CAPYBARA_BODY, BABY_BODY, drawCapybara, hatRise } from './outfits.js';
 import { drawSprite } from './pixel.js';
 import { LILY } from './sprites.js';
 
@@ -22,44 +23,10 @@ const PETAL = ['#ffd3e4', '#f7a8c9', '#ffffff'];
 const BLOOMS = ['#ff8fb8', '#ffd83d', '#ffffff', '#f7a8c9'];
 
 // The capybaras are modeled on the one at home: cream and round, with a
-// brown snout, tiny ears, and something balanced on its head.
-const CAPYBARA_COLORS = {
-  C: '#f6e6a6', // cream coat
-  c: '#e2cc80', // coat shade
-  S: '#b08556', // snout
-  N: '#7d5a36', // nose
-  E: '#a37a4f', // ears
-  P: '#d2b06e', // paws
-  F: '#a37a4f', // feet
-  k: '#2b2a26', // eyes
-  O: '#f28c1e', // orange
-  o: '#ffb648', // orange shine
-  p: '#f7a8c9', // blossom
-  w: '#ffe3ee', // blossom center
-};
-
-const CAPYBARA_BODY = [
-  '.EE.CCCCC.EE.',
-  '.EECCCCCCCEE.',
-  '..CCCCCCCCC..',
-  '.CCCCCCCCCCC.',
-  '.CkCCSSSCCkC.',
-  '.CCCSSSSSCCC.',
-  '.CCCSSNSSCCC.',
-  '.CCCCSSSCCCC.',
-  '.CCCCCCCCCCC.',
-  '.CCPCCCCCPCC.',
-  '.cCCCCCCCCCc.',
-  '..cCCCCCCCc..',
-  '..FF.....FF..',
-];
-const CAPYBARA_HATS = [
-  ['.....OoO.....', '.....OOO.....'], // an orange
-  ['......p......', '.....pwp.....'], // a cherry blossom
-];
-const CAPYBARAS = CAPYBARA_HATS.map((hat) => [...hat, ...CAPYBARA_BODY]);
-const CAPYBARA_WIDTH = CAPYBARA_BODY[0].length;
-const CAPYBARA_HEIGHT = CAPYBARAS[0].length;
+// brown snout, tiny ears, and something balanced on its head. Their sprites
+// and outfits live in outfits.js; the third, smaller one is Happybara.
+const DEFAULT_CAST = [{ hat: 'hat_orange' }, { hat: 'hat_blossom' }, { baby: true }];
+const CAST_SPOTS = [0.16, 0.74, 0.46];
 const HOP_TICKS = 7;
 const flip = (rows) => rows.map((row) => [...row].reverse().join(''));
 const LILY_FLIPPED = flip(LILY);
@@ -87,19 +54,107 @@ function rect(ctx, color, x, y, w, h) {
   ctx.fillRect(x, y, w, h);
 }
 
-function drawSky(ctx, width, height, horizon, wide) {
-  const band = Math.ceil(horizon / SKY.length);
-  SKY.forEach((color, i) => rect(ctx, color, 0, i * band, width, band));
-  rect(ctx, SKY[SKY.length - 1], 0, SKY.length * band, width, height);
+// The sky follows the clock in Manila: dawn, day, dusk, and night.
+const SKIES = {
+  day: SKY,
+  dawn: ['#f4a3b5', '#f8b4ad', '#fbc6a6', '#fdd6a5', '#fee4b3', '#ffefc8', '#fff6dc'],
+  dusk: ['#55488a', '#77589a', '#a3689c', '#cc7c8f', '#ec977b', '#f6b672', '#fbd48d'],
+  night: ['#0b1030', '#0f1740', '#141f50', '#1a2860', '#21326f', '#293c7d', '#32478a'],
+};
+// A wash of color over the land, so it sits in the same light as the sky.
+const LAND_TINT = {
+  day: null,
+  dawn: 'rgba(255, 190, 150, 0.14)',
+  dusk: 'rgba(110, 60, 110, 0.26)',
+  night: 'rgba(14, 22, 66, 0.52)',
+};
 
-  // Square sun with a soft halo.
-  // Beside the title on wide screens; below the Play button on phones.
-  const sunX = Math.round(width * (wide ? 0.7 : 0.88)) - 6;
-  const sunY = Math.round(horizon * (wide ? 0.2 : 0.62));
-  rect(ctx, 'rgba(255, 246, 176, 0.35)', sunX - 2, sunY - 2, 15, 15);
-  rect(ctx, '#ffe98a', sunX, sunY, 11, 11);
-  rect(ctx, '#fff6c4', sunX + 1, sunY + 1, 9, 9);
+function skyPhase() {
+  // Night mode turns the scene to night whatever the hour.
+  if (document.documentElement.dataset.theme === 'night') return 'night';
+  const hour =
+    Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Manila', hour: 'numeric', hour12: false }).format(new Date())) % 24;
+  if (hour >= 19 || hour < 5) return 'night';
+  if (hour < 7) return 'dawn';
+  if (hour < 17) return 'day';
+  return 'dusk';
 }
+
+function drawSky(ctx, width, height, horizon, wide, phase) {
+  const colors = SKIES[phase];
+  const band = Math.ceil(horizon / colors.length);
+  colors.forEach((color, i) => rect(ctx, color, 0, i * band, width, band));
+  rect(ctx, colors[colors.length - 1], 0, colors.length * band, width, height);
+
+  if (phase === 'night') {
+    // Stars, scattered the same way every night.
+    for (let i = 0; i < Math.round(width * 0.5); i += 1) {
+      const x = Math.floor(noise(i, 1, 80) * width);
+      const y = Math.floor(noise(i, 2, 81) * horizon * 0.85);
+      rect(ctx, noise(i, 3, 82) < 0.25 ? '#ffffff' : '#b9c6f2', x, y, 1, 1);
+    }
+  }
+
+  // A square sun by day, a square moon by night.
+  // Beside the title on wide screens; below the Play button on phones.
+  const low = phase === 'dawn' || phase === 'dusk';
+  const x = Math.round(width * (wide ? 0.7 : 0.88)) - 6;
+  const y = Math.round(horizon * (wide ? (low ? 0.6 : 0.2) : low ? 0.8 : 0.62));
+  if (phase === 'night') {
+    rect(ctx, 'rgba(210, 222, 255, 0.2)', x - 2, y - 2, 15, 15);
+    rect(ctx, '#dfe6ff', x, y, 11, 11);
+    rect(ctx, '#f6f8ff', x + 1, y + 1, 9, 9);
+    rect(ctx, '#c9d3f5', x + 6, y + 3, 3, 3);
+    rect(ctx, '#c9d3f5', x + 2, y + 6, 2, 2);
+  } else {
+    rect(ctx, low ? 'rgba(255, 190, 120, 0.4)' : 'rgba(255, 246, 176, 0.35)', x - 2, y - 2, 15, 15);
+    rect(ctx, low ? '#ffb85c' : '#ffe98a', x, y, 11, 11);
+    rect(ctx, low ? '#ffd58a' : '#fff6c4', x + 1, y + 1, 9, 9);
+  }
+}
+
+// After dark the windows glow again, on top of the evening tint.
+function lightWindows(ctx, x, groundY) {
+  for (const winX of [x + 4, x + 25]) {
+    rect(ctx, 'rgba(255, 233, 163, 0.22)', winX - 1, groundY - 13, 9, 9);
+    rect(ctx, '#ffe9a3', winX + 1, groundY - 11, 5, 5);
+    rect(ctx, '#5a3a22', winX + 3, groundY - 11, 1, 5);
+    rect(ctx, '#5a3a22', winX + 1, groundY - 9, 5, 1);
+  }
+  rect(ctx, '#ffe9a3', x + 17, groundY - 23, 2, 2);
+}
+
+// The campfire: two crossed logs and a ring of stones. The flames are drawn
+// live, and only when the fire is lit.
+function drawCampfireLogs(ctx, x, y) {
+  rect(ctx, '#8f8f8f', x - 5, y - 1, 2, 1);
+  rect(ctx, '#7a7a7a', x + 4, y - 1, 2, 1);
+  rect(ctx, '#6b4329', x - 3, y - 2, 7, 2);
+  rect(ctx, '#8a5a37', x - 2, y - 3, 5, 1);
+  rect(ctx, '#3a2718', x - 1, y - 2, 1, 1);
+  rect(ctx, '#3a2718', x + 2, y - 2, 1, 1);
+}
+
+function drawFlames(ctx, x, y, tick, roaring) {
+  const tall = roaring ? 9 : 6;
+  rect(ctx, roaring ? 'rgba(255, 170, 70, 0.22)' : 'rgba(255, 170, 70, 0.14)', x - 7, y - tall - 5, 15, tall + 6);
+  for (let dx = -2; dx <= 2; dx += 1) {
+    const reach = tall - Math.abs(dx) * 2 + Math.floor(noise(dx, tick, 60) * 3);
+    for (let dy = 0; dy < reach; dy += 1) {
+      const color = dy < reach * 0.35 ? '#fff6c4' : dy < reach * 0.7 ? '#ffd83d' : '#f28c1e';
+      rect(ctx, color, x + dx, y - 3 - dy, 1, 1);
+    }
+  }
+  if (roaring) {
+    for (let i = 0; i < 3; i += 1) {
+      const age = ((tick + i * 7) % 20) / 20;
+      rect(ctx, '#ffd83d', x + Math.round(Math.sin(age * 6 + i) * 3), Math.round(y - tall - 2 - age * 10), 1, 1);
+    }
+  }
+}
+
+const MINI_HEART = ['.r.r.', 'rrrrr', '.rrr.', '..r..'];
+const ZED = ['www', '.w.', 'www'];
 
 function drawHills(ctx, width, height, horizon) {
   const ridges = [
@@ -417,7 +472,8 @@ const CLOUDS = [
   { x: 0.3, y: 0.84, w: 16, speed: 0.5 },
 ];
 
-function drawClouds(ctx, width, horizon, seconds) {
+function drawClouds(ctx, width, horizon, seconds, phase) {
+  ctx.globalAlpha = phase === 'night' ? 0.16 : phase === 'day' ? 1 : 0.7;
   const span = width + 60;
   for (const cloud of CLOUDS) {
     const travelled = cloud.x * span + seconds * cloud.speed * 1.2;
@@ -427,6 +483,7 @@ function drawClouds(ctx, width, horizon, seconds) {
     rect(ctx, '#ffffff', x + 4, y - 3, Math.round(cloud.w * 0.55), 3);
     rect(ctx, '#e4eef5', x, y + 5, cloud.w, 1);
   }
+  ctx.globalAlpha = 1;
 }
 
 function drawSmoke(ctx, origin, seconds) {
@@ -450,15 +507,21 @@ function drawPetals(ctx, width, horizon, seconds) {
 }
 
 // Capybaras face you and get around in little hops, resting in between.
-function createCapybaras(width) {
-  return [0.16, 0.74].map((spot, i) => ({
-    x: width * spot,
-    direction: i % 2 ? -1 : 1,
-    resting: 4 + i * 9,
-    hop: 0,
-    seed: i + 1,
-    sprite: CAPYBARAS[i % CAPYBARAS.length],
-  }));
+function createCapybaras(width, cast) {
+  return cast.map((member, i) => {
+    const body = member.baby ? BABY_BODY : CAPYBARA_BODY;
+    return {
+      ...member,
+      w: body[0].length,
+      h: body.length,
+      x: width * CAST_SPOTS[i % CAST_SPOTS.length],
+      direction: i % 2 ? -1 : 1,
+      resting: 4 + i * 9,
+      hop: 0,
+      seed: i + 1,
+      span: width,
+    };
+  });
 }
 
 function moveCapybaras(herd, width, tick) {
@@ -468,9 +531,9 @@ function moveCapybaras(herd, width, tick) {
       continue;
     }
     capybara.hop += 1;
-    capybara.x += capybara.direction * 0.7;
+    capybara.x += capybara.direction * (capybara.baby ? 0.55 : 0.7);
     if (capybara.x < 2) capybara.direction = 1;
-    if (capybara.x > width - CAPYBARA_WIDTH - 2) capybara.direction = -1;
+    if (capybara.x > width - capybara.w - 2) capybara.direction = -1;
     if (capybara.hop >= HOP_TICKS) {
       // Landed: take a breath, sometimes a long one, sometimes turn around.
       capybara.hop = 0;
@@ -481,43 +544,79 @@ function moveCapybaras(herd, width, tick) {
   }
 }
 
+// Where a capybara's body is right now (top-left corner, in canvas pixels).
+function capybaraSpot(capybara, levels) {
+  const x = Math.round(capybara.x);
+  const lift = Math.round(Math.sin((Math.PI * capybara.hop) / HOP_TICKS) * (capybara.baby ? 3 : 4));
+  return { x, y: groundAt(levels, x + capybara.w / 2) - capybara.h - lift };
+}
+
 function drawCapybaras(ctx, herd, levels) {
   for (const capybara of herd) {
-    const x = Math.round(capybara.x);
-    const lift = Math.round(Math.sin((Math.PI * capybara.hop) / HOP_TICKS) * 4);
-    const y = groundAt(levels, x + CAPYBARA_WIDTH / 2) - CAPYBARA_HEIGHT - lift;
-    drawSprite(ctx, capybara.sprite, x, y, CAPYBARA_COLORS);
+    const { x, y } = capybaraSpot(capybara, levels);
+    drawCapybara(ctx, x, y, capybara);
   }
 }
 
 // Draws the scene into the canvas and keeps it gently alive.
-// Returns a function that stops everything.
-export function startLandscape(canvas) {
+// Returns controls: stop(), tap(clientX, clientY), setCampfire({ lit, roaring }),
+// setSleepers(count), setCast(cast), and refresh(). `onMove` is told where
+// each capybara's head is (in CSS pixels) so name tags can follow them.
+export function startLandscape(canvas, { onMove } = {}) {
   const ctx = canvas.getContext('2d');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let sky;
   let front;
   let levels = [];
   let herd = [];
+  let cast = DEFAULT_CAST;
+  let hearts = []; // little hearts that float up when a capybara is tapped
   let chimney = { x: 0, y: 0 };
+  let campfire = { x: 0, y: 0 };
+  let fire = { lit: false, roaring: false };
+  let sleepers = 0;
   let horizon = 0;
+  let scale = 3;
+  let phase = skyPhase();
   let tick = 0;
   let timer = null;
 
   function paint() {
     const seconds = (tick * TICK_MS) / 1000;
     ctx.drawImage(sky, 0, 0);
-    drawClouds(ctx, canvas.width, horizon, seconds);
+    drawClouds(ctx, canvas.width, horizon, seconds, phase);
     ctx.drawImage(front, 0, 0);
-    drawSmoke(ctx, chimney, seconds);
+    if (sleepers > 0) {
+      // Someone is asleep: little Zs drift up from the roof instead of smoke.
+      for (let i = 0; i < 2; i += 1) {
+        const age = (seconds / 3 + i / 2) % 1;
+        ctx.globalAlpha = 1 - age;
+        drawSprite(ctx, ZED, Math.round(chimney.x - 12 + age * 5 + i * 2), Math.round(chimney.y + 4 - age * 14), { w: '#ffffff' });
+      }
+      ctx.globalAlpha = 1;
+    } else {
+      drawSmoke(ctx, chimney, seconds);
+    }
+    if (fire.lit) drawFlames(ctx, campfire.x, campfire.y, tick, fire.roaring);
     drawCapybaras(ctx, herd, levels);
+    for (const heart of hearts) {
+      ctx.globalAlpha = Math.max(0, 1 - heart.age / 14);
+      drawSprite(ctx, MINI_HEART, Math.round(heart.x), Math.round(heart.y - heart.age), { r: '#e2574c' });
+    }
+    ctx.globalAlpha = 1;
     drawPetals(ctx, canvas.width, horizon, seconds);
+    onMove?.(
+      herd.map((capybara) => {
+        const { x, y } = capybaraSpot(capybara, levels);
+        return { name: capybara.name, x: (x + capybara.w / 2) * scale, y: (y - hatRise(capybara.hat)) * scale };
+      }),
+    );
   }
 
   function build() {
     const box = canvas.parentElement.getBoundingClientRect();
     if (!box.width || !box.height) return;
-    const scale = Math.max(3, Math.round(Math.min(box.width, box.height) / 120));
+    scale = Math.max(3, Math.round(Math.min(box.width, box.height) / 120));
     const width = Math.ceil(box.width / scale);
     const height = Math.ceil(box.height / scale);
     canvas.width = width;
@@ -542,7 +641,8 @@ export function startLandscape(canvas) {
     let frontCtx;
     [sky, skyCtx] = makeLayer(width, height);
     [front, frontCtx] = makeLayer(width, height);
-    drawSky(skyCtx, width, height, horizon, wide);
+    phase = skyPhase();
+    drawSky(skyCtx, width, height, horizon, wide, phase);
     drawMountains(frontCtx, width, horizon);
     drawHills(frontCtx, width, height, horizon);
 
@@ -560,22 +660,78 @@ export function startLandscape(canvas) {
     drawTufts(frontCtx, width, levels, houseX);
     drawLilies(frontCtx, width, levels, yard);
 
-    herd = createCapybaras(width);
+    // The campfire sits on the grass just past the trees.
+    const fireX = Math.min(width - 9, houseX + 57);
+    campfire = { x: fireX, y: groundAt(levels, fireX) };
+    drawCampfireLogs(frontCtx, campfire.x, campfire.y);
+
+    if (LAND_TINT[phase]) {
+      frontCtx.globalCompositeOperation = 'source-atop';
+      rect(frontCtx, LAND_TINT[phase], 0, 0, width, height);
+      frontCtx.globalCompositeOperation = 'source-over';
+      if (phase !== 'dawn') lightWindows(frontCtx, houseX, yardY);
+    }
+
+    if (!herd.length || herd[0].span !== width) herd = createCapybaras(width, cast);
+    paint();
+  }
+
+  function step() {
+    tick += 1;
+    moveCapybaras(herd, canvas.width, tick);
+    hearts = hearts.filter((heart) => (heart.age += 1) < 14);
     paint();
   }
 
   build();
   window.addEventListener('resize', build);
-  if (!reduceMotion) {
-    timer = setInterval(() => {
-      tick += 1;
-      moveCapybaras(herd, canvas.width, tick);
-      paint();
-    }, TICK_MS);
-  }
+  if (!reduceMotion) timer = setInterval(step, TICK_MS);
+  // The sky changes with the hour.
+  const clock = setInterval(() => {
+    if (skyPhase() !== phase) build();
+  }, 60_000);
 
-  return () => {
-    window.removeEventListener('resize', build);
-    if (timer) clearInterval(timer);
+  return {
+    stop() {
+      window.removeEventListener('resize', build);
+      clearInterval(timer);
+      clearInterval(clock);
+    },
+    // Tells you what was tapped: 'capybara', 'campfire', or null.
+    tap(clientX, clientY) {
+      const box = canvas.getBoundingClientRect();
+      const x = (clientX - box.left) / scale;
+      const y = (clientY - box.top) / scale;
+      for (const capybara of herd) {
+        const spot = capybaraSpot({ ...capybara, hop: 0 }, levels);
+        if (x >= capybara.x - 3 && x <= capybara.x + capybara.w + 3 && y >= spot.y - 8 && y <= spot.y + capybara.h + 4) {
+          capybara.resting = 0;
+          capybara.hop = 1;
+          hearts.push({ x: capybara.x + capybara.w / 2 - 2, y: spot.y - 4 - hatRise(capybara.hat), age: 0 });
+          if (reduceMotion) paint();
+          return 'capybara';
+        }
+      }
+      if (Math.abs(x - campfire.x) <= 8 && y >= campfire.y - 14 && y <= campfire.y + 4) return 'campfire';
+      return null;
+    },
+    setCampfire(state) {
+      fire = { ...fire, ...state };
+      if (reduceMotion) paint();
+    },
+    // Who is in the scene: [{ name, hat, accessory, baby }], in the order
+    // first person, second person, pet. Positions are kept where possible.
+    setCast(next) {
+      cast = next;
+      const fresh = createCapybaras(canvas.width, cast);
+      herd = fresh.map((capybara, i) => (herd[i] ? { ...capybara, x: herd[i].x, direction: herd[i].direction } : capybara));
+      paint();
+    },
+    // Redraws the whole scene (for example, when night mode is switched).
+    refresh: () => build(),
+    setSleepers(count) {
+      sleepers = count;
+      if (reduceMotion) paint();
+    },
   };
 }

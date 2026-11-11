@@ -139,6 +139,91 @@ export const playPoke = () => jingle([79, 84], 0.11, { level: 0.2, ring: 0.5 });
 // A gentle two-note confirmation.
 export const playDone = () => jingle([76, 81], 0.1, { level: 0.16, ring: 0.6 });
 
+let noiseBuffer = null;
+
+// A short burst of hiss, shaped by a filter: the raw material for creaks and swishes.
+function hiss(seconds, shape) {
+  const ctx = audio();
+  if (!ctx) return null;
+  if (!noiseBuffer) {
+    noiseBuffer = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    const data = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < data.length; i += 1) data[i] = Math.random() * 2 - 1;
+  }
+  const source = ctx.createBufferSource();
+  source.buffer = noiseBuffer;
+  const filter = ctx.createBiquadFilter();
+  const gain = ctx.createGain();
+  shape(ctx.currentTime, filter, gain);
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(sfxBus);
+  source.start();
+  source.stop(ctx.currentTime + seconds);
+  return ctx;
+}
+
+// A wooden lid swinging open.
+export function playCreak() {
+  if (!sfxOn) return;
+  const ctx = hiss(0.32, (now, filter, gain) => {
+    filter.type = 'bandpass';
+    filter.Q.value = 6;
+    filter.frequency.setValueAtTime(260, now);
+    filter.frequency.exponentialRampToValueAtTime(900, now + 0.28);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.5, now + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+  });
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  const thud = ctx.createOscillator();
+  thud.type = 'triangle';
+  thud.frequency.setValueAtTime(120, now + 0.24);
+  thud.frequency.exponentialRampToValueAtTime(70, now + 0.34);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.0001, now + 0.24);
+  gain.gain.exponentialRampToValueAtTime(0.2, now + 0.26);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.38);
+  thud.connect(gain);
+  gain.connect(sfxBus);
+  thud.start(now + 0.24);
+  thud.stop(now + 0.4);
+}
+
+// A page turning.
+export function playPage() {
+  if (!sfxOn) return;
+  hiss(0.2, (now, filter, gain) => {
+    filter.type = 'highpass';
+    filter.frequency.setValueAtTime(1800, now);
+    filter.frequency.exponentialRampToValueAtTime(4200, now + 0.16);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.16, now + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+  });
+}
+
+// A little pop, like picking something up.
+export function playPop() {
+  if (!sfxOn) return;
+  const ctx = audio();
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  const voice = ctx.createOscillator();
+  voice.type = 'sine';
+  voice.frequency.setValueAtTime(420, now);
+  voice.frequency.exponentialRampToValueAtTime(900, now + 0.06);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.2, now + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+  voice.connect(gain);
+  gain.connect(sfxBus);
+  voice.start(now);
+  voice.stop(now + 0.1);
+}
+
 // Plays the click for every button-like thing on the page.
 export function installClickSounds() {
   document.addEventListener(

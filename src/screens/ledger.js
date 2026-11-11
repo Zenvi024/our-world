@@ -4,9 +4,13 @@ import { ICON_EMERALD, ICON_HEART } from '../art/sprites.js';
 import { todayManila, isValidDate, parts, MONTH_NAMES } from '../lib/dates.js';
 import { getUserId } from '../session.js';
 import { loadPartner } from '../data/pokes.js';
-import { fetchLedger, addLedgerEntry, removeLedgerEntry, balanceFor, pesos } from '../data/ledger.js';
+import { fetchLedger, addLedgerEntry, updateLedgerEntry, removeLedgerEntry, balanceFor, pesos } from '../data/ledger.js';
+import { lilyLoader } from '../components/loader.js';
+import { playPage } from '../lib/sound.js';
 import { openModal, confirmDialog } from '../components/modal.js';
 import { playDone } from '../lib/sound.js';
+
+const MONTH_LONG = (date) => MONTH_NAMES[parts(date).month - 1];
 
 const shortDate = (date) => `${MONTH_NAMES[parts(date).month - 1].slice(0, 3)} ${parts(date).day}`;
 
@@ -19,7 +23,7 @@ export function createLedger() {
 
   const noteText = h('p', { class: 'sticky-text' }, 'Counting the emeralds…');
   const noteAmount = h('p', { class: 'sticky-amount' });
-  const settleButton = h('button', { class: 'btn', type: 'button', hidden: true, onclick: openSettle }, 'Settle up');
+  const settleButton = h('button', { class: 'btn', type: 'button', hidden: true, onclick: () => openSettle() }, 'Settle up');
   const summary = h('div', { class: 'page-summary' });
   const lines = h('div', { class: 'book-lines' });
   const status = h('p', { class: 'status', role: 'status' });
@@ -46,7 +50,20 @@ export function createLedger() {
 
     const paid = (id) =>
       entries.filter((entry) => entry.kind === 'expense' && entry.paid_by === id).reduce((sum, entry) => sum + entry.amount, 0);
+    const month = todayManila().slice(0, 7);
+    const thisMonth = entries.filter((entry) => entry.kind === 'expense' && entry.entry_date.startsWith(month));
+    const monthPaid = (id) => thisMonth.filter((entry) => entry.paid_by === id).reduce((sum, entry) => sum + entry.amount, 0);
+    const treats = (id) => thisMonth.filter((entry) => entry.split === 'treat' && entry.paid_by === id).length;
     summary.replaceChildren(
+      h('p', { class: 'summary-head' }, `This ${MONTH_LONG(todayManila())}`),
+      h('p', { class: 'summary-line' }, h('span', null, 'You paid'), h('span', null, pesos(monthPaid(me)))),
+      h('p', { class: 'summary-line' }, h('span', null, `${partner.name} paid`), h('span', null, pesos(monthPaid(partner.id)))),
+      h('p', { class: 'summary-line' }, h('span', null, 'Together'), h('span', null, pesos(monthPaid(me) + monthPaid(partner.id)))),
+      // An empty string adds nothing; a bare `false` would be printed as a word.
+      treats(me) > 0 || treats(partner.id) > 0
+        ? h('p', { class: 'summary-line' }, h('span', null, 'Treats'), h('span', null, `You ${treats(me)}, ${partner.name} ${treats(partner.id)}`))
+        : '',
+      h('p', { class: 'summary-head' }, 'All time'),
       h('p', { class: 'summary-line' }, h('span', null, 'You have paid'), h('span', null, pesos(paid(me)))),
       h('p', { class: 'summary-line' }, h('span', null, `${partner.name} has paid`), h('span', null, pesos(paid(partner.id)))),
       h(
@@ -66,14 +83,18 @@ export function createLedger() {
             const settlement = entry.kind === 'settlement';
             const detail = settlement
               ? `${who(entry.paid_by)} paid ${entry.paid_by === me ? partner.name : 'you'} back`
-              : `${who(entry.paid_by)} paid, ${entry.split === 'half' ? 'shared' : `${entry.paid_by === me ? `${partner.name} owes` : 'you owe'} it all`}`;
+              : entry.split === 'treat'
+                ? `${entry.paid_by === me ? 'Your' : `${partner.name}’s`} treat`
+                : `${who(entry.paid_by)} paid, ${entry.split === 'half' ? 'shared' : `${entry.paid_by === me ? `${partner.name} owes` : 'you owe'} it all`}`;
             return h(
               'div',
               { class: `book-line${settlement ? ' book-line--settlement' : ''}` },
               h('span', { class: 'line-date' }, shortDate(entry.entry_date)),
               h(
-                'span',
-                { class: 'line-what' },
+                settlement ? 'span' : 'button',
+                settlement
+                  ? { class: 'line-what' }
+                  : { class: 'line-what line-edit', type: 'button', 'aria-label': `Edit ${entry.description || 'this entry'}`, onclick: () => openExpense(entry) },
                 h('span', { class: 'line-title' }, settlement ? 'Settled up' : entry.description || 'Something nice'),
                 h('span', { class: 'line-detail' }, detail),
               ),
@@ -103,6 +124,9 @@ export function createLedger() {
     );
   }
 
+  lines.append(lilyLoader('Opening the ledger…'));
+  playPage();
+
   async function load() {
     try {
       const [rows, other] = await Promise.all([fetchLedger(), loadPartner()]);
@@ -115,25 +139,32 @@ export function createLedger() {
     }
   }
 
-  function openExpense() {
-    const description = h('input', { class: 'input', id: 'ledger-what', type: 'text', maxlength: '200', placeholder: 'Dinner, movie tickets, groceries…', required: true });
-    const amount = h('input', { class: 'input', id: 'ledger-amount', type: 'number', inputmode: 'decimal', min: '0.01', step: '0.01', placeholder: '0.00', required: true });
-    const date = h('input', { class: 'input', id: 'ledger-date', type: 'date', value: todayManila(), required: true });
-    const payerMe = h('input', { type: 'radio', name: 'ledger-payer', id: 'ledger-payer-me', checked: true });
-    const payerPartner = h('input', { type: 'radio', name: 'ledger-payer', id: 'ledger-payer-partner' });
-    const splitHalf = h('input', { type: 'radio', name: 'ledger-split', id: 'ledger-split-half', checked: true });
-    const splitFull = h('input', { type: 'radio', name: 'ledger-split', id: 'ledger-split-full' });
-    const fullLabel = h('span', null, `${partner.name} owes all of it`);
+  // Adds a new expense, or edits one when an entry is passed in.
+  function openExpense(entry = null) {
+    const description = h('input', { class: 'input', id: 'ledger-what', type: 'text', maxlength: '200', placeholder: 'Dinner, movie tickets, groceries…', required: true, value: entry?.description ?? '' });
+    const amount = h('input', { class: 'input', id: 'ledger-amount', type: 'number', inputmode: 'decimal', min: '0.01', step: '0.01', placeholder: '0.00', required: true, value: entry ? entry.amount.toFixed(2) : '' });
+    const date = h('input', { class: 'input', id: 'ledger-date', type: 'date', value: entry?.entry_date ?? todayManila(), required: true });
+    const iPaid = !entry || entry.paid_by === me;
+    const split = entry?.split ?? 'half';
+    const payerMe = h('input', { type: 'radio', name: 'ledger-payer', id: 'ledger-payer-me', checked: iPaid });
+    const payerPartner = h('input', { type: 'radio', name: 'ledger-payer', id: 'ledger-payer-partner', checked: !iPaid });
+    const splitHalf = h('input', { type: 'radio', name: 'ledger-split', id: 'ledger-split-half', checked: split === 'half' });
+    const splitFull = h('input', { type: 'radio', name: 'ledger-split', id: 'ledger-split-full', checked: split === 'full' });
+    const splitTreat = h('input', { type: 'radio', name: 'ledger-split', id: 'ledger-split-treat', checked: split === 'treat' });
+    const fullLabel = h('span');
+    const treatLabel = h('span');
     const error = h('p', { class: 'status status--error', role: 'alert' });
-    const save = h('button', { class: 'btn btn--green', type: 'submit' }, 'Write it down');
+    const save = h('button', { class: 'btn btn--green', type: 'submit' }, entry ? 'Save' : 'Write it down');
     const nameSplit = () => {
       fullLabel.textContent = payerMe.checked ? `${partner.name} owes all of it` : 'I owe all of it';
+      treatLabel.textContent = payerMe.checked ? 'My treat (nobody owes)' : `${partner.name}’s treat (nobody owes)`;
     };
+    nameSplit();
     payerMe.addEventListener('change', nameSplit);
     payerPartner.addEventListener('change', nameSplit);
 
     const modal = openModal(
-      { label: 'Add an expense', className: 'small-panel' },
+      { label: entry ? 'Edit this line' : 'Add an expense', className: 'small-panel' },
       h(
         'form',
         {
@@ -154,24 +185,25 @@ export function createLedger() {
             }
             save.disabled = true;
             try {
-              await addLedgerEntry({
-                kind: 'expense',
+              const fields = {
                 description: description.value.trim() || null,
                 amount: value,
                 paid_by: payerMe.checked ? me : partner.id,
-                split: splitHalf.checked ? 'half' : 'full',
+                split: splitTreat.checked ? 'treat' : splitHalf.checked ? 'half' : 'full',
                 entry_date: date.value,
-              });
+              };
+              if (entry) await updateLedgerEntry(entry.id, fields);
+              else await addLedgerEntry({ kind: 'expense', ...fields });
               modal.close();
               await load();
-              say('Written into the ledger.');
+              say(entry ? 'The line was changed.' : 'Written into the ledger.');
             } catch (problem) {
               error.textContent = friendlyError(problem);
               save.disabled = false;
             }
           },
         },
-        h('h2', { class: 'panel-title' }, 'Add an expense'),
+        h('h2', { class: 'panel-title' }, entry ? 'Edit this line' : 'Add an expense'),
         h('div', { class: 'field' }, h('label', { for: 'ledger-what' }, 'What was it for?'), description),
         h(
           'div',
@@ -192,6 +224,7 @@ export function createLedger() {
           h('legend', null, 'How is it shared?'),
           h('label', { class: 'check', for: 'ledger-split-half' }, splitHalf, 'Shared equally'),
           h('label', { class: 'check', for: 'ledger-split-full' }, splitFull, fullLabel),
+          h('label', { class: 'check', for: 'ledger-split-treat' }, splitTreat, treatLabel),
         ),
         error,
         h(
@@ -278,7 +311,7 @@ export function createLedger() {
       'aside',
       { class: 'desk-tools' },
       h('div', { class: 'sticky-note' }, pixelArt(ICON_EMERALD, 'sticky-coin'), noteText, noteAmount),
-      h('button', { class: 'btn btn--green', type: 'button', onclick: openExpense }, 'Add an expense'),
+      h('button', { class: 'btn btn--green', type: 'button', onclick: () => openExpense() }, 'Add an expense'),
       settleButton,
       status,
     ),

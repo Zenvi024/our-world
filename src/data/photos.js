@@ -24,7 +24,7 @@ export async function signedUrls(paths) {
   return new Map(paths.map((path) => [path, signed.get(path)?.url ?? null]));
 }
 
-async function putFile(path, blob) {
+export async function putFile(path, blob) {
   const { error } = await supabase.storage.from(BUCKET).upload(path, blob, {
     contentType: blob.type,
     cacheControl: '31536000',
@@ -41,7 +41,7 @@ export async function savePhoto({ id, memoryId, prepared, takenAt, sortOrder }) 
   const thumbPath = `${memoryId}/${id}_thumb.${extension}`;
   await putFile(storagePath, prepared.full);
   await putFile(thumbPath, prepared.thumb);
-  const { error } = await supabase.from('photos').insert({
+  const row = {
     id,
     memory_id: memoryId,
     storage_path: storagePath,
@@ -50,7 +50,10 @@ export async function savePhoto({ id, memoryId, prepared, takenAt, sortOrder }) 
     width: prepared.width,
     height: prepared.height,
     sort_order: sortOrder,
-  });
+  };
+  let { error } = await supabase.from('photos').insert({ ...row, bytes: prepared.full.size + prepared.thumb.size });
+  // Before sizes exist in the database, save the photo without one.
+  if (error && /bytes/.test(error.message || '')) ({ error } = await supabase.from('photos').insert(row));
   // "Already exists" means an earlier attempt got through; that is a success.
   if (error && error.code !== '23505') throw error;
 }
@@ -67,4 +70,30 @@ export async function deletePhoto(photo) {
   await removeFiles([photo]);
   const { error } = await supabase.from('photos').delete().eq('id', photo.id);
   if (error) throw error;
+}
+
+const TYPICAL_PHOTO_BYTES = 300_000; // for photos saved before sizes were recorded
+
+// Roughly how much storage the photos use, in bytes.
+export async function storageUsed() {
+  let known = 0;
+  let measured = 0;
+  let total = 0;
+  for (let from = 0; from < 50_000; from += 1000) {
+    const { data, error } = await supabase.from('photos').select('*').range(from, from + 999);
+    if (error) throw error;
+    for (const photo of data) {
+      total += 1;
+      if (photo.bytes) {
+        known += photo.bytes;
+        measured += 1;
+      }
+    }
+    if (data.length < 1000) break;
+  }
+  const typical = measured ? known / measured : TYPICAL_PHOTO_BYTES;
+  // Photos on reviews count too (once that part of the database exists).
+  const { data: extra } = await supabase.from('review_photos').select('bytes').limit(5000);
+  const reviewBytes = (extra ?? []).reduce((sum, photo) => sum + (photo.bytes ?? TYPICAL_PHOTO_BYTES), 0);
+  return { bytes: known + (total - measured) * typical + reviewBytes, photos: total + (extra?.length ?? 0) };
 }
