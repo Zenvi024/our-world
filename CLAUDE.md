@@ -410,7 +410,7 @@ These answer the open questions in section 12 and take priority over the working
 ### Milestone 5 (ship) — done
 - Merged to `main`; the keep-alive workflow is `.github/workflows/keep-alive.yml` (needs the `SUPABASE_URL` and `SUPABASE_ANON_KEY` repository secrets); the gift QR code is `gift/our-little-world-qr.png` (remake with `npm run qr`).
 
-### "Daily life" round (November 11, 2026) — on the preview branch, not yet merged
+### "Daily life" round (November 11, 2026) — merged
 Zen chose these from a list of suggestions. They need `supabase/migration-5.sql`.
 - **Play screen:** tappable capybaras (they hop and pop a heart); a "Send…" menu with Poke, Hug, Kiss, Miss you, Eat na, and Drink your water; a Good night / Good morning button (the other person is told, and Zs rise from the roof); a campfire past the trees that is lit on days both visit, roars while both are online, and tells its streak when tapped; a sky that follows Manila time (dawn, day, dusk, night with stars and a moon).
 - **Memory Chest:** Take me back (a random memory), Favorites, and Search.
@@ -427,7 +427,7 @@ Zen chose these from a list of suggestions. They need `supabase/migration-5.sql`
 - **Tidy-up:** unused icons and dead code removed. The style sheets are still layered from the two look changes; merging them into one is still to do.
 - **Chosen for later by Zen:** the first-entry book for Jay (he will plan it first). **Declined:** a countdown sign and quest savings.
 
-### Happybara and night mode (November 11, 2026) — on the preview branch, not yet merged
+### Happybara and night mode (November 11, 2026) — merged
 Zen asked for "everything about" Happybara, and for the Good night button to become a night-mode switch. Needs `supabase/migration-6.sql`.
 - **Happybara** (hotbar egg, route `#/pet`): one shared capybara in a pixel room. Four needs run down with the clock, even while the site is closed: hunger (10 hours), thirst (6), fun (14), clean (30). Feed, Water, Play, and Bathe earn coins (2, 3, 5, 8) only when the need is below 85; feeding uses one meal from the pantry. Tapping the pet cuddles it (love +1, and 1 coin at most once an hour). Love raises its level (30 per level).
 - **Shop:** food, furniture, and hats. (The first prices were replaced in the expansion below; they now live in the `pet_shop` table.)
@@ -436,7 +436,7 @@ Zen asked for "everything about" Happybara, and for the Good night button to bec
 - **Night mode:** the moon button on the Play screen (and a switch in Settings, under Look) turns the scene to night and the whole site to a dark slate-blue palette (`src/styles/night.css`, `src/lib/theme.js`). Remembered per device. The book, quest board, sign, and photo frame keep their materials and are dimmed.
 - **Good night and Good morning** moved into the "Send…" menu. They still set who is asleep (Zs on the roof, "zZ" beside the name), and sleep now wears off by itself after 12 hours.
 
-### Happybara expansion, focus timer, angry cats, and Our Reviews (November 11, 2026) — on the preview branch, not yet merged
+### Happybara expansion, focus timer, angry cats, and Our Reviews (November 11, 2026) — merged
 Zen wants to play Happybara with Jay "for many months," so the game was made much bigger and dearer. Needs `supabase/migration-7.sql` (after 6).
 - **The house:** five rooms with tabs above the picture: living room (free), kitchen (250 coins, level 3), bedroom (450, level 6), bathroom (700, level 10), garden (1,000, level 15). Each has its own furniture (37 pieces in all). Feeding moves to the kitchen, baths to the bathroom tub, play to the garden, and sleep to the bedroom bed, once those exist.
 - **Shop sections:** Food (meals, plus treats that turn coins into love), Rooms, Decor (furniture by room), Walls (5 wallpapers and 4 floors, applied to the room you are standing in), and Outfits (16 hats and 8 accessories; one of each can be worn).
@@ -449,19 +449,28 @@ Zen wants to play Happybara with Jay "for many months," so the game was made muc
 - **Our Reviews** (hotbar star; all nine slots are now used): cafés, restaurants, movies, shows, places. Each review has a name, where, a date, and separate 1-to-5 stars and words from each person, with filters, "Best first," and an average. Tables `reviews` and `review_ratings`.
 - **Fixed:** the loader on the letter shelf wrapped and overflowed; night-mode menus lost their arrow.
 
-### Play-screen tidy-up and fuller reviews (November 11, 2026) — on the preview branch, not yet merged
+### Play-screen tidy-up and fuller reviews (November 11, 2026) — merged
 Needs `supabase/migration-8.sql` (after 7).
 - **Night switch:** now a square sun-or-moon button under the speaker on the Play screen (the Settings switch stays).
 - **"Our album" button:** a dimmed "Soon" button beside "Send…" under Play. It is a placeholder for the **anniversary album**: the first-entry book, an album of their memories through the years, which Zen will design together with Claude later. Tapping it only says it is still being made.
 - **Our Reviews, fuller:** up to 6 photos per review (same compression and HEIC handling as memories; files live in the private bucket under `reviews/<review id>/`), shown on the card and in the snapshot frame; a price level (₱ to ₱₱₱); "would go again" / "would watch again" from each person; a search box; "Both loved it!" and "Split decision!" badges; and a button to open that day in the Memory Chest. Review photos count toward the storage meter, and reviews are in the data backup (their photo files are not in the photo ZIPs yet).
+
+### Seasons, weather, and a livelier Play screen (November 11, 2026) — on the preview branch, not yet merged
+No database file is needed for this round.
+- **Seasons:** spring (the original look), summer, autumn, and winter, switched with a square button under the sun-or-moon switch (and a menu in Settings, under Look). Remembered per device. Each season recolors the trees, grass, bushes, and hills and changes what drifts through the air (petals, nothing, leaves, snow). Summer adds sunflowers, autumn pumpkins, winter a snowman and snow on the roof. The palettes are `LOOKS` in `src/art/landscape.js`.
+- **Weather:** changes every three hours and is the same for both people (it is worked out from the clock, not stored): mostly clear, sometimes rain, now and then a rainbow.
+- **Little wonders:** butterflies by day in spring and summer, two birds crossing the sky now and then, fireflies from dusk (not in winter), and a shooting star about every half minute at night. Tapping the sky just after one makes a wish (a pop-up only; nothing is saved).
+- **Dook and Boop act like their people:** a capybara whose person has said good night sleeps with closed eyes and Zs; when both have, the cottage windows go dark. While both people are online, the two sit on either side of the campfire and a heart rises between them now and then. (The Zs from the chimney are gone; the sleepers carry them.) The "together" part depends on live presence, which cannot be tested from the cloud session; it was checked with a test harness.
+- **Mailbox:** a red mailbox left of the cottage. Its yellow flag goes up and an envelope peeks out while an unread letter waits; tapping it opens Letters.
+- **Photo of the day:** a small taped snapshot in the top-left corner of the Play screen: one favorite memory a day (any memory with a photo if there are no favorites), the same for both people. Tapping it opens that day.
+- **Monthsary marks:** every 13th from December 2024 on has a small lily in its Memory Chest slot, and the Play screen says "Monthsary 25!" on the day. November 13 keeps its anniversary frame instead.
 
 ### Advice given on a private chat (Zen asked; not built yet)
 Feasible as a later milestone: a messages table, live updates through Supabase Realtime, emoji from the normal keyboard, and photos through the existing photo pipeline. The catch is notifications: without them a message is only seen when the site is open. Push notifications on iPhone need the site added to the Home Screen, permission granted, and a small server function with its own keys. Messages would be private to the two accounts but not end-to-end encrypted. Recommended after the anniversary, starting without push.
 
 ### Still to do, in this order (Zen asked that none of these be forgotten)
 1. **Private chat** (see the advice above), if Zen confirms.
-2. **Seasons for the title screen:** a way to switch between spring (current), autumn, and winter versions of the scene.
-3. **Reminders for upcoming dates** beyond goals and the anniversary (ties into Batch 2 date invitations).
-4. Batch 2 as written in section 5: Anniversary mode, crafting table date generator, date invitations.
-5. **The anniversary album** (the first-entry book: an album of their memories through the years, opened from the dimmed "Our album" button on the Play screen). Zen will design it with Claude.
-6. Merging the layered style sheets into one.
+2. **Reminders for upcoming dates** beyond goals and the anniversary (ties into Batch 2 date invitations).
+3. Batch 2 as written in section 5: Anniversary mode, crafting table date generator, date invitations.
+4. **The anniversary album** (the first-entry book: an album of their memories through the years, opened from the dimmed "Our album" button on the Play screen). Zen will design it with Claude.
+5. Merging the layered style sheets into one.

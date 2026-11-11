@@ -1,5 +1,5 @@
 import { todayManila, parts, longDate, sameDayInOtherYears } from './dates.js';
-import { togetherStats } from './together.js';
+import { togetherStats, monthsaryNumber } from './together.js';
 import { plural } from './dom.js';
 import { getUserId } from '../session.js';
 import { fetchMemoriesOn, groupByDate, coverOf } from '../data/memories.js';
@@ -225,12 +225,16 @@ export async function showLandingNotices({ onOpenDay }) {
   const stats = togetherStats(today);
   if (stats.isAnniversary) {
     showToast({ header: 'Happy anniversary!', text: `${plural(stats.days, 'day')} together.`, icon: ICON_HEART });
-  } else if (stats.daysUntilNext <= 30) {
-    showToast({
-      header: 'Coming up',
-      text: `${plural(stats.daysUntilNext, 'day')} until your anniversary.`,
-      icon: LILY,
-    });
+  } else {
+    const months = monthsaryNumber(today);
+    if (months) showToast({ header: `Monthsary ${months}!`, text: `${plural(months, 'month')} together today.`, icon: LILY });
+    if (stats.daysUntilNext <= 30) {
+      showToast({
+        header: 'Coming up',
+        text: `${plural(stats.daysUntilNext, 'day')} until your anniversary.`,
+        icon: LILY,
+      });
+    }
   }
 
   try {

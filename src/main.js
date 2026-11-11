@@ -40,7 +40,13 @@ function render() {
     showWorldScreen = null;
     if (!cleanupTitle) {
       document.title = 'Our Little World';
-      cleanupTitle = mountTitle(root, { onEnter: () => navigate(HOME) });
+      cleanupTitle = mountTitle(root, {
+        onEnter: () => navigate(HOME),
+        onOpenDay: (date) => {
+          navigate(HOME);
+          openChest(date);
+        },
+      });
       if (signedIn) {
         // The Play screen doubles as a little notice board.
         showLandingNotices({

@@ -1,4 +1,5 @@
 import { h, friendlyError, plural } from '../lib/dom.js';
+import { monthsaryNumber } from '../lib/together.js';
 import { pixelArt } from '../art/pixel.js';
 import { LILY } from '../art/sprites.js';
 import {
@@ -42,9 +43,16 @@ function createDaySlot(date, today, onOpen) {
     number,
   );
   if (date === today) el.classList.add('day-slot--today');
+  const monthsary = isAnniversary(date) ? 0 : monthsaryNumber(date);
+  const occasion = isAnniversary(date) ? ', our anniversary' : monthsary ? `, monthsary ${monthsary}` : '';
   if (isAnniversary(date)) {
     el.classList.add('day-slot--anniversary');
     el.append(pixelArt(LILY, 'day-lily'));
+  } else if (monthsary) {
+    // Every 13th is a monthsary: a small lily in the corner.
+    el.classList.add('day-slot--monthsary');
+    el.append(pixelArt(LILY, 'day-lily day-lily--small'));
+    el.setAttribute('aria-label', `${longDate(date)}${occasion}`);
   }
 
   // Puts the day's cover photo and stack count into the slot.
@@ -60,7 +68,7 @@ function createDaySlot(date, today, onOpen) {
     if (count >= 2) el.append(h('span', { class: 'stack-count', 'aria-hidden': 'true' }, String(count)));
     el.setAttribute(
       'aria-label',
-      `${longDate(date)}, ${count ? plural(count, 'photo') : 'a note'}${isAnniversary(date) ? ', our anniversary' : ''}`,
+      `${longDate(date)}, ${count ? plural(count, 'photo') : 'a note'}${occasion}`,
     );
   }
 

@@ -10,7 +10,7 @@ import { isSfxOn, setSfx, getMusicLevel, setMusicLevel, nextTrack, onMusicChange
 import { loadMembers, saveAvatar, getUserId } from '../session.js';
 import { avatarArt, AVATAR_NAMES } from '../components/avatar.js';
 import { storageUsed } from '../data/photos.js';
-import { isNight, setNight } from '../lib/theme.js';
+import { isNight, setNight, getSeason, setSeason, SEASON_NAMES } from '../lib/theme.js';
 import { notificationsSupported, notificationsOn, setNotifications } from '../lib/notify.js';
 import { downloadData, downloadPhotos } from '../lib/backup.js';
 import { createProgressBar } from '../components/progressBar.js';
@@ -212,10 +212,16 @@ function soundSection() {
 
 function lookSection() {
   const night = h('input', { type: 'checkbox', id: 'look-night', checked: isNight(), onchange: () => setNight(night.checked) });
+  const season = h(
+    'select',
+    { class: 'input', id: 'look-season', onchange: () => setSeason(season.value) },
+    Object.entries(SEASON_NAMES).map(([key, label]) => h('option', { value: key, selected: key === getSeason() }, label)),
+  );
   return section(
     'Look',
     h('label', { class: 'check check--row', for: 'look-night' }, night, 'Night mode (a darker look and a night sky)'),
-    h('p', { class: 'hint' }, 'Remembered on this device. The moon button on the Play screen does the same.'),
+    h('div', { class: 'field' }, h('label', { for: 'look-season' }, 'Season on the Play screen'), season),
+    h('p', { class: 'hint' }, 'Remembered on this device. The buttons under the speaker on the Play screen do the same.'),
   );
 }
 

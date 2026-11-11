@@ -137,6 +137,83 @@
   height: 26px;
 }
 
+/* The season button sits under the sun-or-moon switch. */
+.season-button {
+  top: calc(max(10px, env(safe-area-inset-top)) + 104px);
+}
+
+/* Photo of the day: a small snapshot taped to the corner of the sky. On a
+   phone it stays small enough to clear the title. */
+.daily-photo {
+  position: absolute;
+  z-index: 2;
+  top: calc(max(8px, env(safe-area-inset-top)) + 4px);
+  left: 10px;
+  width: 54px;
+  padding: 3px 3px 2px;
+  font: inherit;
+  color: #3a2a1c;
+  background: #fffdf7;
+  border: 0;
+  border-radius: 0;
+  box-shadow:
+    0 0 0 1px #e6dcc3,
+    3px 4px 0 rgba(0, 0, 0, 0.3);
+  transform: rotate(-4deg);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.daily-photo img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: #efe7d3;
+}
+
+.daily-date {
+  display: block;
+  margin-top: 1px;
+  font-family: var(--font-pixel);
+  font-size: 0.9375rem;
+  line-height: 0.95;
+  text-align: center;
+}
+
+/* The year only fits on wider screens. */
+.daily-year {
+  display: none;
+}
+
+.daily-tape {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 24px;
+  height: 9px;
+  background: repeating-linear-gradient(45deg, #f7a8c9 0 5px, #ffd3e4 5px 10px);
+  transform: translateX(-50%) rotate(3deg);
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.15);
+}
+
+@media (min-width: 700px) {
+  .daily-photo {
+    top: calc(max(10px, env(safe-area-inset-top)) + 8px);
+    left: 14px;
+    width: 104px;
+    padding: 6px 6px 4px;
+  }
+
+  .daily-date {
+    font-size: 1.1875rem;
+  }
+
+  .daily-year {
+    display: inline;
+  }
+}
+
 .greet-note {
   min-height: 1.1em;
   font-family: var(--font-pixel);
