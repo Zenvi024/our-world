@@ -24,7 +24,7 @@ export async function signedUrls(paths) {
   return new Map(paths.map((path) => [path, signed.get(path)?.url ?? null]));
 }
 
-async function putFile(path, blob) {
+export async function putFile(path, blob) {
   const { error } = await supabase.storage.from(BUCKET).upload(path, blob, {
     contentType: blob.type,
     cacheControl: '31536000',
@@ -92,5 +92,8 @@ export async function storageUsed() {
     if (data.length < 1000) break;
   }
   const typical = measured ? known / measured : TYPICAL_PHOTO_BYTES;
-  return { bytes: known + (total - measured) * typical, photos: total };
+  // Photos on reviews count too (once that part of the database exists).
+  const { data: extra } = await supabase.from('review_photos').select('bytes').limit(5000);
+  const reviewBytes = (extra ?? []).reduce((sum, photo) => sum + (photo.bytes ?? TYPICAL_PHOTO_BYTES), 0);
+  return { bytes: known + (total - measured) * typical + reviewBytes, photos: total + (extra?.length ?? 0) };
 }

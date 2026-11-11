@@ -27,7 +27,7 @@ async function everything(table, columns = '*') {
   return rows;
 }
 
-const TABLES = ['profiles', 'memories', 'photos', 'goals', 'goal_steps', 'ledger_entries', 'lists', 'list_items', 'letter_comments', 'daily_answers', 'splash_texts'];
+const TABLES = ['profiles', 'memories', 'photos', 'goals', 'goal_steps', 'ledger_entries', 'lists', 'list_items', 'letter_comments', 'daily_answers', 'splash_texts', 'reviews', 'review_ratings', 'review_photos'];
 
 // Saves every memory, quest, ledger line, list, letter, and answer as one file.
 export async function downloadData() {

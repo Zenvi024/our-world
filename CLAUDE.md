@@ -449,6 +449,12 @@ Zen wants to play Happybara with Jay "for many months," so the game was made muc
 - **Our Reviews** (hotbar star; all nine slots are now used): cafés, restaurants, movies, shows, places. Each review has a name, where, a date, and separate 1-to-5 stars and words from each person, with filters, "Best first," and an average. Tables `reviews` and `review_ratings`.
 - **Fixed:** the loader on the letter shelf wrapped and overflowed; night-mode menus lost their arrow.
 
+### Play-screen tidy-up and fuller reviews (November 11, 2026) — on the preview branch, not yet merged
+Needs `supabase/migration-8.sql` (after 7).
+- **Night switch:** now a square sun-or-moon button under the speaker on the Play screen (the Settings switch stays).
+- **"Our album" button:** a dimmed "Soon" button beside "Send…" under Play. It is a placeholder for the **anniversary album**: the first-entry book, an album of their memories through the years, which Zen will design together with Claude later. Tapping it only says it is still being made.
+- **Our Reviews, fuller:** up to 6 photos per review (same compression and HEIC handling as memories; files live in the private bucket under `reviews/<review id>/`), shown on the card and in the snapshot frame; a price level (₱ to ₱₱₱); "would go again" / "would watch again" from each person; a search box; "Both loved it!" and "Split decision!" badges; and a button to open that day in the Memory Chest. Review photos count toward the storage meter, and reviews are in the data backup (their photo files are not in the photo ZIPs yet).
+
 ### Advice given on a private chat (Zen asked; not built yet)
 Feasible as a later milestone: a messages table, live updates through Supabase Realtime, emoji from the normal keyboard, and photos through the existing photo pipeline. The catch is notifications: without them a message is only seen when the site is open. Push notifications on iPhone need the site added to the Home Screen, permission granted, and a small server function with its own keys. Messages would be private to the two accounts but not end-to-end encrypted. Recommended after the anniversary, starting without push.
 
@@ -457,4 +463,5 @@ Feasible as a later milestone: a messages table, live updates through Supabase R
 2. **Seasons for the title screen:** a way to switch between spring (current), autumn, and winter versions of the scene.
 3. **Reminders for upcoming dates** beyond goals and the anniversary (ties into Batch 2 date invitations).
 4. Batch 2 as written in section 5: Anniversary mode, crafting table date generator, date invitations.
-5. The first-entry book for Jay (Zen will plan it first), and merging the layered style sheets into one.
+5. **The anniversary album** (the first-entry book: an album of their memories through the years, opened from the dimmed "Our album" button on the Play screen). Zen will design it with Claude.
+6. Merging the layered style sheets into one.

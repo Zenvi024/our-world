@@ -5,7 +5,7 @@ import { AVATAR_HATS } from '../art/outfits.js';
 import { cachedSplash, fetchSplash } from '../data/splash.js';
 import { startLandscape } from '../art/landscape.js';
 import { pixelArt } from '../art/pixel.js';
-import { ICON_HEART, ICON_MOON, ICON_SUN, LILY } from '../art/sprites.js';
+import { ICON_HEART, ICON_MOON, ICON_SUN, ICON_ALBUM, LILY } from '../art/sprites.js';
 import { playPoke, playDone, playPop } from '../lib/sound.js';
 import { createMusicButton } from '../components/musicButton.js';
 import { openModal } from '../components/modal.js';
@@ -151,13 +151,20 @@ function createNotice(message, onClose) {
   return overlay;
 }
 
-// The row under Play: send a little something, and switch night mode.
+// The row under Play: send a little something, and (one day) open the album.
 function createGreetings(scene) {
   const sendLabel = h('span', null, 'Send…');
   const send = h('button', { class: 'btn greet-button', type: 'button' }, pixelArt(ICON_HEART), sendLabel);
-  const night = createNightButton(scene);
+  // The anniversary album is still being made; its button waits here, dimmed.
+  const album = h(
+    'button',
+    { class: 'btn greet-button greet-button--soon', type: 'button', 'aria-disabled': 'true', 'data-quiet': 'true', title: 'Coming soon' },
+    pixelArt(ICON_ALBUM),
+    h('span', null, 'Our album'),
+    h('span', { class: 'soon-tag' }, 'Soon'),
+  );
   const note = h('p', { class: 'greet-note', role: 'status' });
-  const row = h('div', { class: 'greet', hidden: true }, h('div', { class: 'greet-row' }, send, night), note);
+  const row = h('div', { class: 'greet', hidden: true }, h('div', { class: 'greet-row' }, send, album), note);
   let partner = null;
   let moods = new Map();
 
@@ -199,6 +206,8 @@ function createGreetings(scene) {
     }
   }
 
+  album.addEventListener('click', () => say('Our album is still being made. Soon!'));
+
   send.addEventListener('click', () => {
     const modal = openModal(
       { label: `Send ${partner.name} something`, className: 'small-panel' },
@@ -235,31 +244,31 @@ function createGreetings(scene) {
       refresh();
     })
     .catch(() => {
-      // Only the night switch shows if the partner cannot be loaded.
+      // The row stays hidden if the partner cannot be loaded.
     })
     .finally(() => {
-      send.hidden = !partner;
-      row.hidden = false;
+      row.hidden = !partner;
     });
 
   return { el: row, stop: onLive('moods', refresh) };
 }
 
-// Switches night mode: the sky turns to night and the whole site goes dark.
-function createNightButton(scene) {
-  const icon = h('span', { class: 'greet-icon' });
-  const label = h('span');
-  const button = h('button', { class: 'btn greet-button', type: 'button' }, icon, label);
+// A square sun-or-moon button under the speaker: the sky turns to night
+// and the whole site goes dark, or back again.
+function createNightButton(onSwitch) {
+  const button = h('button', { class: 'btn night-button', type: 'button' });
   const show = () => {
     const on = isNight();
-    icon.replaceChildren(pixelArt(on ? ICON_SUN : ICON_MOON));
-    label.textContent = on ? 'Day mode' : 'Night mode';
+    // The icon shows what a tap will bring: the sun by night, the moon by day.
+    button.replaceChildren(pixelArt(on ? ICON_SUN : ICON_MOON));
     button.setAttribute('aria-pressed', String(on));
+    button.setAttribute('aria-label', on ? 'Night mode is on. Tap for day mode.' : 'Night mode is off. Tap for night mode.');
+    button.title = on ? 'Day mode' : 'Night mode';
   };
   button.addEventListener('click', () => {
     setNight(!isNight());
     show();
-    scene.refresh();
+    onSwitch();
   });
   show();
   return button;
@@ -335,6 +344,7 @@ export function mountTitle(root, { onEnter }) {
       h('p', { class: 'title-foot' }, 'Since November 13, 2024'),
     ),
     music.el,
+    createNightButton(() => scene.refresh()),
   );
 
   root.replaceChildren(screen);

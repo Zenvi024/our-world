@@ -516,3 +516,23 @@ export const ICON_CAT_ANGRY = [
   '................',
   '................',
 ];
+
+// A photo album with a heart on its cover (the anniversary album, still to come).
+export const ICON_ALBUM = [
+  '................',
+  '..zzzzzzzzzzzz..',
+  '.zxxxxxxxxxxxxz.',
+  '.zxXXXXXXXXXXxz.',
+  '.zxXxxxxxxxxXxz.',
+  '.zxXxrrxxrrxXxz.',
+  '.zxXrrrrrrrrXxz.',
+  '.zxXrrrrrrrrXxz.',
+  '.zxXxrrrrrrxXxz.',
+  '.zxXxxrrrrxxXxz.',
+  '.zxXxxxrrxxxXxz.',
+  '.zxXXXXXXXXXXxz.',
+  '.zcccccccccccz..',
+  '..zzzzzzzzzzzz..',
+  '................',
+  '................',
+];
