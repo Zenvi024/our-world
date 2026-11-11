@@ -4,6 +4,7 @@ import './styles/world.css';
 import './styles/calendar.css';
 import './styles/charm.css';
 import './styles/cozy.css';
+import './styles/life.css';
 import { currentRoute, navigate, onRouteChange } from './router.js';
 import { initSession, getSession, onSessionChange } from './session.js';
 import { mountTitle } from './screens/title.js';

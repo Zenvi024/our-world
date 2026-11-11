@@ -4,7 +4,18 @@ import { ICON_MAP } from '../art/sprites.js';
 import { parts, toDate, isValidDate, MONTH_NAMES } from '../lib/dates.js';
 import { loadMemberNames } from '../session.js';
 import { ADVANCEMENTS, fetchUnlocks, checkAdvancements } from '../data/advancements.js';
-import { fetchGoals, addGoal, updateGoal, removeGoal, setGoalDone, saveGoalOrder } from '../data/goals.js';
+import {
+  fetchGoals,
+  addGoal,
+  updateGoal,
+  removeGoal,
+  setGoalDone,
+  saveGoalOrder,
+  fetchSteps,
+  addStep,
+  setStepDone,
+  removeStep,
+} from '../data/goals.js';
 import { openModal, confirmDialog } from '../components/modal.js';
 import { fetchHearts } from '../data/hearts.js';
 import { createHeartButton } from '../components/heartButton.js';
@@ -118,6 +129,7 @@ export function createAdvancements() {
   let goals = [];
   let names = new Map();
   let hearts = new Map();
+  let steps = new Map();
 
   const fail = (error) => {
     status.textContent = friendlyError(error);
@@ -125,10 +137,11 @@ export function createAdvancements() {
 
   async function load() {
     try {
-      [goals, names, hearts] = await Promise.all([
+      [goals, names, hearts, steps] = await Promise.all([
         fetchGoals(),
         loadMemberNames(),
         fetchHearts('goal').catch(() => new Map()),
+        fetchSteps().catch(() => new Map()),
       ]);
       status.textContent = '';
       renderGoals();
@@ -164,6 +177,48 @@ export function createAdvancements() {
     }
   }
 
+  // The checklist inside a quest: tick steps off, add new ones, remove old ones.
+  function stepList(goal, done) {
+    const list = steps.get(goal.id) ?? [];
+    const run = async (work) => {
+      try {
+        await work();
+        await load();
+      } catch (error) {
+        fail(error);
+      }
+    };
+    const input = h('input', { class: 'input', type: 'text', maxlength: '200', placeholder: 'Add a step…', 'aria-label': `Add a step to ${goal.title}`, required: true });
+    return h(
+      'div',
+      { class: 'steps' },
+      list.length > 0 && h('p', { class: 'steps-count' }, `${list.filter((step) => step.done).length} of ${list.length} steps done`),
+      list.map((step) => {
+        const box = h('input', { type: 'checkbox', checked: step.done, onchange: () => run(() => setStepDone(step.id, box.checked)) });
+        return h(
+          'div',
+          { class: `step${step.done ? ' step--done' : ''}` },
+          h('label', { class: 'check' }, box, h('span', null, step.body)),
+          h('button', { class: 'line-remove', type: 'button', 'aria-label': `Remove the step ${step.body}`, onclick: () => run(() => removeStep(step.id)) }, '×'),
+        );
+      }),
+      !done &&
+        h(
+          'form',
+          {
+            class: 'input-row step-add',
+            onsubmit: (event) => {
+              event.preventDefault();
+              const body = input.value.trim();
+              if (body) run(() => addStep(goal.id, body));
+            },
+          },
+          input,
+          h('button', { class: 'btn btn--small', type: 'submit', 'aria-label': 'Add step' }, '+'),
+        ),
+    );
+  }
+
   function goalRow(goal, index, count) {
     const done = Boolean(goal.done_at);
     return h(
@@ -184,6 +239,7 @@ export function createAdvancements() {
             : targetText(goal),
         ),
         goal.note && h('p', { class: 'goal-note' }, goal.note),
+        stepList(goal, done),
       ),
       h(
         'div',

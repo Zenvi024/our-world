@@ -17,6 +17,8 @@ import { uploadBatch } from '../lib/uploader.js';
 import { openModal, confirmDialog } from '../components/modal.js';
 import { createProgressBar } from '../components/progressBar.js';
 import { openPhotoViewer } from './photoViewer.js';
+import { lilyLoader } from '../components/loader.js';
+import { playCreak } from '../lib/sound.js';
 
 // The form for writing or editing a memory's words.
 function openMemoryForm({ memory, date, onSaved }) {
@@ -318,6 +320,7 @@ export function openChest(date, { onChange } = {}) {
     body.replaceChildren(...parts_);
   }
 
-  body.append(h('p', { class: 'hint' }, 'Opening the chest…'));
+  body.append(lilyLoader('Opening the chest…'));
+  playCreak();
   load();
 }

@@ -7,6 +7,13 @@ import {
   getSession,
 } from '../session.js';
 import { isSfxOn, setSfx, getMusicLevel, setMusicLevel, nextTrack, onMusicChange } from '../lib/sound.js';
+import { loadMembers, saveAvatar, getUserId } from '../session.js';
+import { avatarArt, AVATAR_NAMES } from '../components/avatar.js';
+import { storageUsed } from '../data/photos.js';
+import { notificationsSupported, notificationsOn, setNotifications } from '../lib/notify.js';
+import { downloadData, downloadPhotos } from '../lib/backup.js';
+import { createProgressBar } from '../components/progressBar.js';
+import { announce } from '../lib/live.js';
 import {
   fetchSplash,
   addSplash,
@@ -202,6 +209,196 @@ function soundSection() {
   );
 }
 
+function avatarSection() {
+  const status = createStatus();
+  const buttons = new Map();
+  const choose = async (key) => {
+    try {
+      await saveAvatar(key);
+      announce('moods'); // the meters show the new face
+      for (const [name, button] of buttons) button.setAttribute('aria-pressed', String(name === key));
+      status.say('That is you now.');
+    } catch (error) {
+      status.say(friendlyError(error), true);
+    }
+  };
+  const grid = h(
+    'div',
+    { class: 'avatar-grid' },
+    Object.keys(AVATAR_NAMES).map((key) => {
+      const button = h(
+        'button',
+        { class: 'avatar-choice', type: 'button', 'aria-pressed': 'false', 'aria-label': AVATAR_NAMES[key], title: AVATAR_NAMES[key], onclick: () => choose(key) },
+        avatarArt(key),
+      );
+      buttons.set(key, button);
+      return button;
+    }),
+  );
+  loadMembers()
+    .then((members) => buttons.get(members.get(getUserId())?.avatar ?? 'orange')?.setAttribute('aria-pressed', 'true'))
+    .catch(() => {});
+  return section('Your capybara', h('p', { class: 'hint' }, 'Pick the capybara that appears beside your name.'), grid, status.el);
+}
+
+const PLAN_KEY = 'our-world.storage-gb';
+
+function storageSection() {
+  const status = createStatus();
+  const fill = h('div', { class: 'progress-fill' });
+  const text = h('p', { class: 'progress-text' }, 'Measuring…');
+  let plan = 1;
+  try {
+    plan = Number(localStorage.getItem(PLAN_KEY)) || 1;
+  } catch {
+    // The free plan is assumed.
+  }
+  const size = h('input', { class: 'input', id: 'storage-plan', type: 'number', inputmode: 'decimal', min: '1', step: '1', value: String(plan) });
+  let used = null;
+
+  function show() {
+    if (!used) return;
+    const megabytes = used.bytes / 1_000_000;
+    const share = Math.min(100, (megabytes / (plan * 1000)) * 100);
+    fill.style.width = `${Math.max(1, share)}%`;
+    const amount = megabytes >= 1000 ? `${(megabytes / 1000).toFixed(2)} GB` : `${megabytes.toFixed(0)} MB`;
+    text.textContent = `About ${amount} of ${plan} GB used by ${used.photos.toLocaleString('en-US')} photos (${share.toFixed(share < 10 ? 1 : 0)}%).`;
+  }
+
+  storageUsed()
+    .then((result) => {
+      used = result;
+      show();
+    })
+    .catch((error) => {
+      text.textContent = '';
+      status.say(friendlyError(error), true);
+    });
+
+  return section(
+    'Storage',
+    h('div', { class: 'progress' }, h('div', { class: 'progress-bar' }, fill), text),
+    h(
+      'div',
+      { class: 'field' },
+      h('label', { for: 'storage-plan' }, 'Storage in your Supabase plan (GB)'),
+      h(
+        'div',
+        { class: 'input-row' },
+        size,
+        h(
+          'button',
+          {
+            class: 'btn',
+            type: 'button',
+            onclick: () => {
+              plan = Math.max(1, Math.round(Number(size.value)) || 1);
+              size.value = String(plan);
+              try {
+                localStorage.setItem(PLAN_KEY, String(plan));
+              } catch {
+                // The number just lasts for this visit.
+              }
+              show();
+              status.say('Updated.');
+            },
+          },
+          'Update',
+        ),
+      ),
+    ),
+    h('p', { class: 'hint' }, 'The free plan has 1 GB. If you upgrade, type the new size here.'),
+    status.el,
+  );
+}
+
+function notificationSection() {
+  const status = createStatus();
+  const box = h('input', {
+    type: 'checkbox',
+    id: 'notify-on',
+    checked: notificationsOn(),
+    disabled: !notificationsSupported(),
+    onchange: async () => {
+      const on = await setNotifications(box.checked);
+      if (box.checked && !on) {
+        box.checked = false;
+        status.say('Notifications are blocked for this site in your browser or phone settings.', true);
+      } else {
+        status.say(on ? 'Notifications are on for this device.' : 'Notifications are off for this device.');
+      }
+    },
+  });
+  return section(
+    'Notifications',
+    h('label', { class: 'check check--row', for: 'notify-on' }, box, 'Notify me about pokes, letters, and low hearts'),
+    h(
+      'p',
+      { class: 'hint' },
+      notificationsSupported()
+        ? 'These appear while Our Little World is open in the background. On an iPhone, add the site to your Home Screen first. A fully closed site cannot send notifications yet.'
+        : 'This browser cannot show notifications. On an iPhone, add the site to your Home Screen and open it from there.',
+    ),
+    status.el,
+  );
+}
+
+function backupSection() {
+  const status = createStatus();
+  const bar = createProgressBar();
+  bar.el.hidden = true;
+  const dataButton = h(
+    'button',
+    {
+      class: 'btn',
+      type: 'button',
+      onclick: async () => {
+        dataButton.disabled = true;
+        try {
+          const counts = await downloadData();
+          status.say(`Saved ${counts.memories} memories, ${counts.letters} letters, and everything else to one file.`);
+        } catch (error) {
+          status.say(friendlyError(error), true);
+        }
+        dataButton.disabled = false;
+      },
+    },
+    'Download our data',
+  );
+  const photoButton = h(
+    'button',
+    {
+      class: 'btn',
+      type: 'button',
+      onclick: async () => {
+        photoButton.disabled = true;
+        bar.el.hidden = false;
+        try {
+          const result = await downloadPhotos((done, total) => bar.set(done, total, `Packing photo ${done} of ${total}…`));
+          status.say(
+            result.missed
+              ? `Saved ${result.saved} photos. ${result.missed} could not be fetched; try again later.`
+              : `Saved all ${result.saved} photos.`,
+            result.missed > 0,
+          );
+        } catch (error) {
+          status.say(friendlyError(error), true);
+        }
+        bar.el.hidden = true;
+        photoButton.disabled = false;
+      },
+    },
+    'Download our photos',
+  );
+  return section(
+    'Backup',
+    h('p', { class: 'hint' }, 'Keep a copy on your own computer. The data is one file; the photos come as ZIP files of up to 150 photos each, sorted into folders by date.'),
+    bar.el,
+    status.el,
+    h('div', { class: 'button-row' }, dataButton, photoButton),
+  );
+}
+
 function passwordSection() {
   const status = createStatus();
   const first = h('input', {
@@ -298,8 +495,12 @@ export function createSettings() {
     'div',
     { class: 'settings' },
     displayNameSection(),
+    avatarSection(),
     soundSection(),
+    notificationSection(),
     splashSection(),
+    storageSection(),
+    backupSection(),
     passwordSection(),
     signOutSection(),
   );

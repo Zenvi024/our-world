@@ -1,5 +1,7 @@
 import { fetchMemoriesOn, createMemory } from '../data/memories.js';
 import { savePhoto } from '../data/photos.js';
+import { playPop } from './sound.js';
+import { announce } from './live.js';
 
 const ATTEMPTS = 3;
 const AT_ONCE = 2;
@@ -68,6 +70,7 @@ export async function uploadBatch(items, { onProgress } = {}) {
             sortOrder: item.sortOrder,
           });
           saved = true;
+          playPop();
           item.prepared = null; // free the memory
         } catch (error) {
           item.error = error;
@@ -83,5 +86,6 @@ export async function uploadBatch(items, { onProgress } = {}) {
   onProgress?.(0, queue.length);
   await Promise.all(Array.from({ length: Math.min(AT_ONCE, queue.length) }, worker));
   await wakeLock?.release().catch(() => {});
+  if (failed.length < queue.length) announce('memories');
   return failed;
 }
