@@ -455,7 +455,7 @@ Needs `supabase/migration-8.sql` (after 7).
 - **"Our album" button:** a dimmed "Soon" button beside "Send…" under Play. It is a placeholder for the **anniversary album**: the first-entry book, an album of their memories through the years, which Zen will design together with Claude later. Tapping it only says it is still being made.
 - **Our Reviews, fuller:** up to 6 photos per review (same compression and HEIC handling as memories; files live in the private bucket under `reviews/<review id>/`), shown on the card and in the snapshot frame; a price level (₱ to ₱₱₱); "would go again" / "would watch again" from each person; a search box; "Both loved it!" and "Split decision!" badges; and a button to open that day in the Memory Chest. Review photos count toward the storage meter, and reviews are in the data backup (their photo files are not in the photo ZIPs yet).
 
-### Seasons, weather, and a livelier Play screen (November 11, 2026) — on the preview branch, not yet merged
+### Seasons, weather, and a livelier Play screen (November 11, 2026) — merged
 No database file is needed for this round.
 - **Seasons:** spring (the original look), summer, autumn, and winter, switched with a square button under the sun-or-moon switch (and a menu in Settings, under Look). Remembered per device. Each season recolors the trees, grass, bushes, and hills and changes what drifts through the air (petals, nothing, leaves, snow). Summer adds sunflowers, autumn pumpkins, winter a snowman and snow on the roof. The palettes are `LOOKS` in `src/art/landscape.js`.
 - **Weather:** changes every three hours and is the same for both people (it is worked out from the clock, not stored): mostly clear, sometimes rain, now and then a rainbow.
