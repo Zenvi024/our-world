@@ -410,6 +410,23 @@ These answer the open questions in section 12 and take priority over the working
 ### Milestone 5 (ship) — done
 - Merged to `main`; the keep-alive workflow is `.github/workflows/keep-alive.yml` (needs the `SUPABASE_URL` and `SUPABASE_ANON_KEY` repository secrets); the gift QR code is `gift/our-little-world-qr.png` (remake with `npm run qr`).
 
+### "Daily life" round (November 11, 2026) — on the preview branch, not yet merged
+Zen chose these from a list of suggestions. They need `supabase/migration-5.sql`.
+- **Play screen:** tappable capybaras (they hop and pop a heart); a "Send…" menu with Poke, Hug, Kiss, Miss you, Eat na, and Drink your water; a Good night / Good morning button (the other person is told, and Zs rise from the roof); a campfire past the trees that is lit on days both visit, roars while both are online, and tells its streak when tapped; a sky that follows Manila time (dawn, day, dusk, night with stars and a moon).
+- **Memory Chest:** Take me back (a random memory), Favorites, and Search.
+- **Letters:** sealed "open when…" letters shown as envelopes, drafts kept on the device, and a pointer to a sealed letter when your own hearts drop to 2 or fewer.
+- **Quests:** steps (a checklist inside each quest).
+- **Ledger:** tap a line to edit it, treats that nobody owes, and totals for the month.
+- **New hotbar slots:** Lists (shared lists kept in chests) and Question of the Day (answers stay hidden until both have answered).
+- **Hotbar:** the selected item's name floats above the bar.
+- **Sounds and motion:** a chest creak, a page turn, a pop when a photo lands, a swaying lily loader.
+- **Avatars:** each person picks a capybara (Settings), shown beside their name on the meters.
+- **Live updates:** a private Realtime channel carries "something changed" pings and who is online; the once-a-minute check remains as a fallback. Not testable from the cloud session.
+- **Notifications:** an opt-in switch in Settings; they appear only while the site is open in the background (no push service). Not testable from the cloud session.
+- **Settings:** a storage meter with an editable plan size, and Backup (one data file, plus photos as ZIP files).
+- **Tidy-up:** unused icons and dead code removed. The style sheets are still layered from the two look changes; merging them into one is still to do.
+- **Chosen for later by Zen:** the first-entry book for Jay (he will plan it first). **Declined:** a countdown sign and quest savings.
+
 ### Advice given on a private chat (Zen asked; not built yet)
 Feasible as a later milestone: a messages table, live updates through Supabase Realtime, emoji from the normal keyboard, and photos through the existing photo pipeline. The catch is notifications: without them a message is only seen when the site is open. Push notifications on iPhone need the site added to the Home Screen, permission granted, and a small server function with its own keys. Messages would be private to the two accounts but not end-to-end encrypted. Recommended after the anniversary, starting without push.
 

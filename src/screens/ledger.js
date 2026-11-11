@@ -23,7 +23,7 @@ export function createLedger() {
 
   const noteText = h('p', { class: 'sticky-text' }, 'Counting the emeralds…');
   const noteAmount = h('p', { class: 'sticky-amount' });
-  const settleButton = h('button', { class: 'btn', type: 'button', hidden: true, onclick: openSettle }, 'Settle up');
+  const settleButton = h('button', { class: 'btn', type: 'button', hidden: true, onclick: () => openSettle() }, 'Settle up');
   const summary = h('div', { class: 'page-summary' });
   const lines = h('div', { class: 'book-lines' });
   const status = h('p', { class: 'status', role: 'status' });
@@ -309,7 +309,7 @@ export function createLedger() {
       'aside',
       { class: 'desk-tools' },
       h('div', { class: 'sticky-note' }, pixelArt(ICON_EMERALD, 'sticky-coin'), noteText, noteAmount),
-      h('button', { class: 'btn btn--green', type: 'button', onclick: openExpense }, 'Add an expense'),
+      h('button', { class: 'btn btn--green', type: 'button', onclick: () => openExpense() }, 'Add an expense'),
       settleButton,
       status,
     ),
