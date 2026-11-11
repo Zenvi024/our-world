@@ -357,3 +357,66 @@ Claude adds the GitHub Actions keep-alive so the free Supabase project doesn't p
 - [ ] Jay's account sees all memories; an undelivered letter is invisible to him.
 - [ ] Add to Home Screen shows the lily icon.
 - [ ] Nothing secret is in the GitHub repo.
+
+---
+
+## 14. Decisions made with Zen (November 10, 2026)
+
+These answer the open questions in section 12 and take priority over the working defaults above.
+
+- **Site title:** "Our Little World," with "by Zen & Jay" beneath it on the Play screen.
+- **Week start:** Monday.
+- **Stack count:** the number of photos on that date.
+- **Splash text:** yes, and it must be editable in the app. Splash texts live in the `splash_texts` table (members only) and are managed in Settings. They take turns on the title screen. Signed-out visitors only ever see a generic default line.
+- **Jay's account:** already exists in Supabase Auth. Never ask Zen for passwords or keys.
+- **Letters:** the app reads and writes letters only through the database functions `send_letter`, `get_letters`, `mark_letter_read`, and `cancel_letter`, so a surprise letter's arrival time stays hidden from both people.
+- **Fonts:** Pixelify Sans for the logo only; Jersey 15 for headings and buttons; VT323 for small labels and numbers (its digits are the easiest to tell apart).
+- **Supabase access from Claude Code:** the Supabase connector in the cloud session cannot see the `our-world` project, so Zen runs `supabase/migration.sql` himself in the SQL Editor.
+
+---
+
+## 15. Zen's later requests (November 10, 2026)
+
+### Done
+- Title screen is a cozy scene: a cottage with a red roof and birch walls, bonsai-style cherry blossom trees (after Zen's reference photo), snow-capped mountains fading into the sky, falling petals (Zen really likes these), chimney smoke, and two front-facing hopping capybaras modeled on the cream capybara toy at home (one carries an orange on its head, like the toy).
+- A house button in the top-left of every in-world screen returns to the title screen.
+
+### Also done (Milestone 3, with Zen's additions)
+- **Goals** (Zen's idea for customizable advancements): the Goals screen holds a shared bucket list. Each goal has a title, notes, and an optional "from" and "to" date. Goals can be reordered with arrows, marked "Done!" (which pops up "Goal Reached!" once for each person), and moved back with "Not yet." The built-in advancements sit below them.
+- **Ledger** (hotbar coin): expenses in pesos, who paid, shared equally or owed in full, a running "who owes whom" balance, and "Settle up."
+- **Pokes:** a "Poke" button on the Play screen; the other person gets a dark pop-up.
+- **Play screen as a notice board:** pokes every time; once a day per device, an anniversary countdown (within 30 days), "On this day" with last year's photo (tap to open that day), and a goal whose target window is here.
+- **Sound:** original, synthesized click sounds and pop-up jingles (on by default) and an original music-box loop (off by default; note button on the Play screen). Both have switches in Settings and are remembered per device. There are no audio files.
+- Goals, the ledger, and pokes use `supabase/migration-2.sql`, which Zen runs after `migration.sql`.
+
+### Also done (Milestone 4 and the "make everything cozy" round)
+- **Letters (Milestone 4):** a shelf of received letters (unread ones shimmer and say "New"), an open-book page for reading and writing, three ways to send (now, on a day and time in 12-hour Manila time, or a surprise within 7, 30, or 90 days), a "Letters you sent" list (Drifting…, Arrives …, Delivered, Read, Taken back), and "Take back" before delivery. A pop-up announces a newly arrived letter.
+- **Heart reactions** on goals and letters, and **little replies** (comments) on letters.
+- **Mood hearts** under every screen title: yours on the left (tap to set 0 to 5), your partner's on the right. At 2 hearts or fewer, the other person gets a pop-up.
+- **Cozy look everywhere:** warm paper panels, wooden buttons and hotbar, sandy slots, and a handwriting font (Patrick Hand) for notes. Zen found the gray panels "boxy, robotic, corporate"; keep new screens skeuomorphic and warm.
+- **Ledger as an open book with a quill:** tools (sticky-note balance, "Add an expense," "Settle up") sit beside the book; on wide screens they are on the left and the book opens to two pages. **Settle up accepts a partial amount.**
+- **Goals as notes pinned to a wooden board.**
+- **Music:** three original music-box pieces that take turns, and one speaker button (Play screen and every in-world header) that steps off, soft, medium, full. Settings has the same volume and a "Next tune" button.
+- These use `supabase/migration-3.sql` (moods, goal_hearts, letter_hearts, letter_comments), run after the first two.
+
+### Zen's corrections on the look (November 11, 2026) — these override the "cozy" round where they conflict
+- **Keep it looking like Minecraft.** The Play button, the calendar and chest, the hotbar, menus, and ordinary buttons are gray stone, like an inventory. The warm "cozy" materials are only for objects: the book, the quest board, and the photo frame.
+- **Names:** the calendar screen is called **Memory Chest**; goals are called **Quests** ("Our quests", "Add a quest", "Quest Complete!").
+- **Hotbar icons**, hand-drawn in the blocky item style after Zen's references: a gold clock (Memory Chest), a book and quill (Letters), a blank map (Quests), an emerald (Ledger). Zen offered Mojang's own icon images; rule 1 in section 6 still stands, so these are original drawings of the same objects.
+- **The book** (ledger and letters) follows Zen's book-and-quill reference: leather cover, plain cream pages with a spine, tan "Page 1 of 2" labels, pixel lettering. No handwriting font in the book.
+- **Health and hunger** sit just above the XP bar: hearts on the left, drumsticks on the right, a name in the middle. The display alternates between Zen and Jay every few seconds (tap the name to switch); each person sets only their own. At 2 or fewer of either, the other gets a pop-up. Hunger uses `supabase/migration-4.sql`.
+- **Desktop:** the calendar is larger. **Photo viewer:** the photo sits in a taped snapshot frame with its title and date.
+
+### Milestone 5 (ship) — done
+- Merged to `main`; the keep-alive workflow is `.github/workflows/keep-alive.yml` (needs the `SUPABASE_URL` and `SUPABASE_ANON_KEY` repository secrets); the gift QR code is `gift/our-little-world-qr.png` (remake with `npm run qr`).
+
+### Advice given on a private chat (Zen asked; not built yet)
+Feasible as a later milestone: a messages table, live updates through Supabase Realtime, emoji from the normal keyboard, and photos through the existing photo pipeline. The catch is notifications: without them a message is only seen when the site is open. Push notifications on iPhone need the site added to the Home Screen, permission granted, and a small server function with its own keys. Messages would be private to the two accounts but not end-to-end encrypted. Recommended after the anniversary, starting without push.
+
+### Still to do, in this order (Zen asked that none of these be forgotten)
+1. **Private chat** (see the advice above), if Zen confirms.
+2. **"Happybara" virtual pet** (new hotbar slot, perhaps an egg icon): a Tamagotchi-style capybara the two care for together. It persists and keeps running: it has needs (food, water), and they can feed it, play with it, bathe it, and tap it for reactions. Caring for it earns points, which buy food, things for the capybara, and furniture for the house. Zen left the specifics to the builder. Needs its own tables (a third SQL file).
+4. **Seasons for the title screen:** a way to switch between spring (current), autumn, and winter versions of the scene.
+5. **Night mode:** a dark version of the scene, and a dark mode for the whole site that changes the palette and overall vibe.
+6. **Reminders for upcoming dates** beyond goals and the anniversary (ties into Batch 2 date invitations).
+7. Batch 2 as written in section 5: Anniversary mode, crafting table date generator, date invitations.

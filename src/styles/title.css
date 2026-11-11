@@ -1,0 +1,150 @@
+.title-screen {
+  position: relative;
+  height: 100dvh;
+  min-height: 480px;
+  overflow: hidden;
+  background: #86c8f1;
+}
+
+.landscape-holder {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.landscape {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+.title-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: max(9vh, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+}
+
+.logo-block {
+  position: relative;
+  width: min(100%, 560px);
+  text-align: center;
+}
+
+/* Chunky block lettering: a dark outline plus a stepped drop, built from
+   layered shadows. Sizes are in em so it scales with the font size. */
+.logo {
+  --o: 0.045em;
+  position: relative;
+  font-family: var(--font-logo);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.logo-words {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font: inherit;
+}
+
+.logo-top,
+.logo-main {
+  text-shadow:
+    var(--o) 0 0 var(--edge-color),
+    calc(-1 * var(--o)) 0 0 var(--edge-color),
+    0 var(--o) 0 var(--edge-color),
+    0 calc(-1 * var(--o)) 0 var(--edge-color),
+    var(--o) var(--o) 0 var(--edge-color),
+    calc(-1 * var(--o)) var(--o) 0 var(--edge-color),
+    var(--o) calc(-1 * var(--o)) 0 var(--edge-color),
+    calc(-1 * var(--o)) calc(-1 * var(--o)) 0 var(--edge-color),
+    0 calc(2 * var(--o)) 0 var(--drop-color),
+    var(--o) calc(2 * var(--o)) 0 var(--drop-color),
+    calc(-1 * var(--o)) calc(2 * var(--o)) 0 var(--drop-color),
+    0 calc(3 * var(--o)) 0 var(--edge-color),
+    var(--o) calc(3 * var(--o)) 0 var(--edge-color),
+    calc(-1 * var(--o)) calc(3 * var(--o)) 0 var(--edge-color);
+}
+
+.logo-top {
+  --edge-color: #2b2a26;
+  --drop-color: #9c957c;
+  font-size: clamp(2.25rem, 11.5vw, 4rem);
+  color: var(--cream);
+}
+
+.logo-main {
+  --edge-color: #17380f;
+  --drop-color: #2f6b22;
+  font-size: clamp(3.75rem, 21vw, 7rem);
+  color: #7ed957;
+}
+
+.logo-by {
+  margin-top: 1.5em;
+  font-family: var(--font-pixel);
+  font-size: clamp(1.625rem, 7vw, 2.125rem);
+  line-height: 1;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 rgba(23, 56, 15, 0.8);
+}
+
+.splash {
+  position: absolute;
+  left: 72%;
+  bottom: -0.35em;
+  white-space: nowrap;
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: var(--font-pixel);
+  font-size: clamp(1.5rem, 6.4vw, 2rem);
+  line-height: 1;
+  color: var(--splash);
+  text-shadow: 2px 2px 0 #4d4500;
+  transform: translate(-50%, 50%) rotate(-12deg);
+  animation: splash-pulse 0.5s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes splash-pulse {
+  from {
+    transform: translate(-50%, 50%) rotate(-12deg) scale(1);
+  }
+  to {
+    transform: translate(-50%, 50%) rotate(-12deg) scale(1.07);
+  }
+}
+
+.play-button {
+  margin-top: clamp(28px, 6.5vh, 64px);
+  width: min(280px, 72vw);
+  min-height: 60px;
+  font-size: 2.5rem;
+  letter-spacing: 0.04em;
+}
+
+.title-foot {
+  margin-top: auto;
+  padding-top: 20px;
+  font-family: var(--font-pixel);
+  font-size: 1.375rem;
+  line-height: 1;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+}
+
+.login-panel {
+  width: min(100%, 360px);
+  margin: auto;
+}
+
+.notice-text {
+  font-size: 1rem;
+}

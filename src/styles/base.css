@@ -1,0 +1,309 @@
+/* Theme: grass greens lead, with dirt browns, stone grays, and cream. */
+:root {
+  --grass-light: #8fe46a;
+  --grass: #5bb543;
+  --grass-mid: #46952f;
+  --grass-dark: #2f6b22;
+  --grass-deep: #1f4a17;
+
+  --dirt-light: #a9744a;
+  --dirt: #8a5a37;
+  --dirt-dark: #6b4329;
+  --dirt-deep: #3a2718;
+
+  --stone-light: #e3e3e3;
+  --stone: #c6c6c6;
+  --stone-mid: #8b8b8b;
+  --stone-dark: #555555;
+  --stone-deep: #1f1f1f;
+
+  --cream: #fbf5e3;
+  --ink: #2b2a26;
+  --splash: #ffee55;
+  --danger: #b5372b;
+  --danger-dark: #7d2219;
+
+  /* Three pixel fonts, each with one job: the logo, headings and buttons,
+     and small labels and numbers (where every digit must be unmistakable). */
+  --font-logo: 'Pixelify Sans', 'Trebuchet MS', sans-serif;
+  --font-display: 'Jersey 15', 'Trebuchet MS', 'Verdana', sans-serif;
+  --font-pixel: 'VT323', 'Courier New', monospace;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --edge: 3px;
+
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--dirt-deep);
+  color: var(--cream);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2,
+p,
+ul {
+  margin: 0;
+}
+
+ul {
+  padding: 0;
+  list-style: none;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.panel :focus-visible {
+  outline-color: var(--ink);
+}
+
+.pixel-art {
+  display: inline-block;
+  line-height: 0;
+}
+
+.pixel-art svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+/* Beveled panel, like an inventory window. */
+.panel {
+  background: var(--stone);
+  color: var(--ink);
+  border: var(--edge) solid var(--stone-deep);
+  box-shadow:
+    inset var(--edge) var(--edge) 0 #ffffff,
+    inset calc(-1 * var(--edge)) calc(-1 * var(--edge)) 0 var(--stone-mid);
+  padding: 18px 16px 16px;
+}
+
+.panel-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.75rem;
+  line-height: 1.1;
+  margin-bottom: 10px;
+}
+
+.hint {
+  font-size: 0.9375rem;
+  color: #45433d;
+  margin-bottom: 12px;
+}
+
+/* Beveled buttons. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 18px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
+  background: #7d7d7d;
+  border: var(--edge) solid var(--stone-deep);
+  border-radius: 0;
+  box-shadow:
+    inset var(--edge) var(--edge) 0 #b4b4b4,
+    inset calc(-1 * var(--edge)) calc(-1 * var(--edge)) 0 #565656;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.btn:hover {
+  filter: brightness(1.1);
+}
+
+.btn:active {
+  filter: brightness(0.95);
+  box-shadow:
+    inset var(--edge) var(--edge) 0 #565656,
+    inset calc(-1 * var(--edge)) calc(-1 * var(--edge)) 0 #b4b4b4;
+}
+
+.btn:disabled {
+  filter: grayscale(0.6) brightness(0.9);
+  cursor: default;
+}
+
+.btn--green {
+  background: var(--grass-mid);
+  box-shadow:
+    inset var(--edge) var(--edge) 0 var(--grass-light),
+    inset calc(-1 * var(--edge)) calc(-1 * var(--edge)) 0 var(--grass-dark);
+}
+
+.btn--green:active {
+  box-shadow:
+    inset var(--edge) var(--edge) 0 var(--grass-dark),
+    inset calc(-1 * var(--edge)) calc(-1 * var(--edge)) 0 var(--grass-light);
+}
+
+.btn--danger {
+  background: var(--danger);
+  box-shadow:
+    inset var(--edge) var(--edge) 0 #e0685c,
+    inset calc(-1 * var(--edge)) calc(-1 * var(--edge)) 0 var(--danger-dark);
+}
+
+.btn--danger:active {
+  box-shadow:
+    inset var(--edge) var(--edge) 0 var(--danger-dark),
+    inset calc(-1 * var(--edge)) calc(-1 * var(--edge)) 0 #e0685c;
+}
+
+.btn--small {
+  min-height: 44px;
+  padding: 6px 12px;
+  font-size: 1.3125rem;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* Form fields. Inputs stay at 16px so iPhone Safari does not zoom in. */
+.field {
+  margin-bottom: 12px;
+}
+
+.field label {
+  display: block;
+  font-family: var(--font-pixel);
+  font-size: 1.375rem;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 12px;
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--ink);
+  background: var(--cream);
+  border: var(--edge) solid var(--stone-deep);
+  border-radius: 0;
+  box-shadow: inset var(--edge) var(--edge) 0 rgba(0, 0, 0, 0.14);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.input:disabled {
+  background: #dcd7c6;
+}
+
+.input::placeholder {
+  color: #7a766a;
+}
+
+.input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.input-row .input {
+  flex: 1;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  font-size: 0.9375rem;
+  cursor: pointer;
+}
+
+.check input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--grass-mid);
+}
+
+.status {
+  min-height: 1.45em;
+  margin-top: 6px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--grass-deep);
+}
+
+.status--error {
+  color: var(--danger-dark);
+}
+
+.status:empty {
+  min-height: 0;
+  margin-top: 0;
+}
+
+/* A dimmed layer that holds a panel in the middle of the screen. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  background: rgba(15, 20, 12, 0.62);
+  overflow-y: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
