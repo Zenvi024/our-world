@@ -1,5 +1,6 @@
 import { h } from '../lib/dom.js';
 import { pixelArt } from '../art/pixel.js';
+import { systemNotify } from '../lib/notify.js';
 
 // Dark pop-ups that slide in at the top of the screen, one at a time.
 //   showToast({ header, text, icon: sprite rows, imageUrl, onClick, sound })
@@ -52,6 +53,7 @@ function next() {
 }
 
 export function showToast(toast) {
+  if (toast.notify) systemNotify(toast.header, toast.text);
   queue.push(toast);
   if (!showing) next();
 }

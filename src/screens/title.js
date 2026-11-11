@@ -4,10 +4,17 @@ import { getSession, signIn } from '../session.js';
 import { cachedSplash, fetchSplash } from '../data/splash.js';
 import { startLandscape } from '../art/landscape.js';
 import { pixelArt } from '../art/pixel.js';
-import { ICON_HEART } from '../art/sprites.js';
-import { playPoke } from '../lib/sound.js';
+import { ICON_HEART, ICON_BED, LILY } from '../art/sprites.js';
+import { playPoke, playDone, playPop } from '../lib/sound.js';
 import { createMusicButton } from '../components/musicButton.js';
-import { loadPartner, sendPoke } from '../data/pokes.js';
+import { openModal } from '../components/modal.js';
+import { showToast } from '../components/toast.js';
+import { plural } from '../lib/dom.js';
+import { onLive, isPartnerOnline } from '../lib/live.js';
+import { getUserId } from '../session.js';
+import { loadPartner, sendPoke, POKES, POKE_MENU } from '../data/pokes.js';
+import { fetchMoods, setAsleep } from '../data/moods.js';
+import { recordVisit, campfireState } from '../data/visits.js';
 
 const SPLASH_SECONDS = 5;
 
@@ -142,34 +149,104 @@ function createNotice(message, onClose) {
   return overlay;
 }
 
-// "Poke Jay": a tiny hello that pops up on the other person's screen.
-function createPokeButton() {
-  const label = h('span', null, 'Poke');
-  const button = h('button', { class: 'btn poke-button', type: 'button', hidden: true, 'data-quiet': 'true' }, pixelArt(ICON_HEART), label);
+// The row under Play: send a little something, and say good night.
+function createGreetings(scene) {
+  const sendLabel = h('span', null, 'Send…');
+  const send = h('button', { class: 'btn greet-button', type: 'button' }, pixelArt(ICON_HEART), sendLabel);
+  const bedLabel = h('span', null, 'Good night');
+  const bed = h('button', { class: 'btn greet-button', type: 'button', 'data-quiet': 'true' }, pixelArt(ICON_BED), bedLabel);
+  const note = h('p', { class: 'greet-note', role: 'status' });
+  const row = h('div', { class: 'greet', hidden: true }, h('div', { class: 'greet-row' }, send, bed), note);
+  let partner = null;
+  let asleep = false;
+
+  const say = (message) => {
+    note.textContent = message;
+    setTimeout(() => {
+      if (note.textContent === message) showSleepers();
+    }, 2600);
+  };
+
+  let moods = new Map();
+  function showSleepers() {
+    const theirs = partner && moods.get(partner.id)?.asleep_since;
+    note.textContent = theirs ? `${partner.name} is asleep.` : '';
+    bedLabel.textContent = asleep ? 'Good morning' : 'Good night';
+    scene.setSleepers(Number(asleep) + Number(Boolean(theirs)));
+  }
+
+  async function refresh() {
+    try {
+      moods = await fetchMoods();
+      asleep = Boolean(moods.get(getUserId())?.asleep_since);
+      showSleepers();
+    } catch {
+      // The bed button still works once the meters are set up.
+    }
+  }
+
+  send.addEventListener('click', () => {
+    const modal = openModal(
+      { label: `Send ${partner.name} something`, className: 'small-panel' },
+      h('h2', { class: 'panel-title' }, `Send ${partner.name}…`),
+      h(
+        'div',
+        { class: 'poke-menu' },
+        POKE_MENU.map((kind) =>
+          h(
+            'button',
+            {
+              class: 'btn poke-choice',
+              type: 'button',
+              'data-quiet': 'true',
+              onclick: async () => {
+                modal.close();
+                try {
+                  await sendPoke(partner.id, kind);
+                  playPoke();
+                  say(`Sent to ${partner.name}!`);
+                } catch {
+                  say('That could not be sent. Please try again.');
+                }
+              },
+            },
+            pixelArt(POKES[kind].icon),
+            POKES[kind].label,
+          ),
+        ),
+      ),
+      h('div', { class: 'button-row' }, h('button', { class: 'btn', type: 'button', onclick: () => modal.close() }, 'Cancel')),
+    );
+  });
+
+  bed.addEventListener('click', async () => {
+    bed.disabled = true;
+    try {
+      await setAsleep(!asleep);
+      asleep = !asleep;
+      await sendPoke(partner.id, asleep ? 'good_night' : 'good_morning');
+      playDone();
+      say(asleep ? 'Sweet dreams!' : 'Good morning!');
+      showSleepers();
+    } catch {
+      say('That did not work. Please try again.');
+    }
+    bed.disabled = false;
+  });
+
   loadPartner()
-    .then((partner) => {
-      if (!partner) return;
-      label.textContent = `Poke ${partner.name}`;
-      button.hidden = false;
-      button.addEventListener('click', async () => {
-        button.disabled = true;
-        try {
-          await sendPoke(partner.id);
-          playPoke();
-          label.textContent = 'Poked!';
-        } catch (error) {
-          label.textContent = 'Could not poke';
-        }
-        setTimeout(() => {
-          label.textContent = `Poke ${partner.name}`;
-          button.disabled = false;
-        }, 2500);
-      });
+    .then((found) => {
+      if (!found) return;
+      partner = found;
+      sendLabel.textContent = `Send ${partner.name}…`;
+      row.hidden = false;
+      refresh();
     })
     .catch(() => {
-      // The button stays hidden if the partner cannot be loaded.
+      // The row stays hidden if the partner cannot be loaded.
     });
-  return button;
+
+  return { el: row, stop: onLive('moods', refresh) };
 }
 
 // Shows the title screen inside root. Returns a function that cleans it up.
@@ -178,6 +255,7 @@ export function mountTitle(root, { onEnter }) {
   const splash = createSplash();
   const music = createMusicButton();
   const signedIn = isConfigured && Boolean(getSession());
+  const greetSlot = h('span', { hidden: true });
   let dialog = null;
 
   const closeDialog = () => {
@@ -237,14 +315,50 @@ export function mountTitle(root, { onEnter }) {
         h('p', { class: 'logo-by' }, 'by Zen & Jay'),
       ),
       playButton,
-      signedIn && createPokeButton(),
+      greetSlot,
       h('p', { class: 'title-foot' }, 'Since November 13, 2024'),
     ),
     music.el,
   );
 
   root.replaceChildren(screen);
-  const stopLandscape = startLandscape(canvas);
+  const scene = startLandscape(canvas);
+  const stops = [];
+
+  // The campfire burns on days you both visit, and roars while you are both here.
+  let fireState = { lit: false, streak: 0 };
+  async function tendFire() {
+    try {
+      fireState = await campfireState();
+    } catch {
+      // The fire waits until visits are set up.
+    }
+    scene.setCampfire({ lit: fireState.lit, roaring: fireState.lit && isPartnerOnline() });
+  }
+  if (signedIn) {
+    const greetings = createGreetings(scene);
+    greetSlot.replaceWith(greetings.el);
+    stops.push(greetings.stop, onLive('visits', tendFire), onLive('presence', tendFire));
+    recordVisit().catch(() => {}).then(tendFire);
+  }
+
+  // Tapping the scene: capybaras hop and blush, and the campfire tells its story.
+  screen.addEventListener('click', (event) => {
+    if (event.target.closest('button, a, input, .overlay')) return;
+    const hit = scene.tap(event.clientX, event.clientY);
+    if (hit === 'capybara') playPop();
+    if (hit === 'campfire') {
+      showToast({
+        header: fireState.lit ? 'The campfire is burning' : 'The campfire is waiting',
+        text: fireState.lit
+          ? `Lit ${plural(fireState.streak, 'day')} in a row.`
+          : signedIn
+            ? 'It lights on days you both visit.'
+            : 'It lights when you are both home.',
+        icon: LILY,
+      });
+    }
+  });
 
   splash.setLines(cachedSplash());
   if (isConfigured && getSession()) {
@@ -258,7 +372,8 @@ export function mountTitle(root, { onEnter }) {
   document.fonts?.ready.then(() => splash.setLines(cachedSplash()));
 
   return () => {
-    stopLandscape();
+    scene.stop();
+    stops.forEach((stop) => stop());
     splash.stop();
     music.stop();
   };

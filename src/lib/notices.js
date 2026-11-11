@@ -5,7 +5,10 @@ import { getUserId } from '../session.js';
 import { fetchMemoriesOn, groupByDate, coverOf } from '../data/memories.js';
 import { signedUrls } from '../data/photos.js';
 import { fetchGoals } from '../data/goals.js';
-import { collectPokes, loadPartner } from '../data/pokes.js';
+import { collectPokes, loadPartner, POKES } from '../data/pokes.js';
+import { fetchSeals } from '../data/letters.js';
+import { fetchAnswers } from '../data/questions.js';
+import { ICON_SIGN } from '../art/sprites.js';
 import { showToast } from '../components/toast.js';
 import { playPoke } from './sound.js';
 import { ICON_HEART, ICON_MAP, ICON_LETTERS, ICON_DRUMSTICK, LILY } from '../art/sprites.js';
@@ -32,6 +35,7 @@ async function showPartnerMood() {
         text: `Feeling ${mood.hearts} of ${MAX_METER} hearts right now.`,
         icon: ICON_HEART,
         sound: playPoke,
+        notify: true,
       });
     }
     if (lowHunger) {
@@ -40,6 +44,7 @@ async function showPartnerMood() {
         text: `Down to ${mood.hunger} of ${MAX_METER} on the hunger bar.`,
         icon: ICON_DRUMSTICK,
         sound: playPoke,
+        notify: true,
       });
     }
   } catch {
@@ -61,6 +66,7 @@ async function showNewLetters(onOpenLetters) {
       text: fresh[0].title || 'Tap to read it.',
       icon: ICON_LETTERS,
       sound: playPoke,
+      notify: true,
       onClick: onOpenLetters,
     });
   } catch {
@@ -84,18 +90,40 @@ export async function showNewPokes() {
     if (pokes.length) {
       const partner = await loadPartner();
       const name = partner?.name ?? 'Your partner';
-      showToast({
-        header: 'Poke!',
-        text: pokes.length === 1 ? `${name} poked you.` : `${name} poked you ${pokes.length} times.`,
-        icon: ICON_HEART,
-        sound: playPoke,
-      });
+      // One pop-up per poke, newest last; a long pile is summed up instead.
+      const shown = pokes.length > 4 ? pokes.slice(-3) : pokes;
+      if (shown.length < pokes.length) {
+        showToast({ header: 'Thinking of you', text: `${name} sent you ${pokes.length} little things.`, icon: ICON_HEART, sound: playPoke, notify: true });
+      }
+      for (const poke of shown) {
+        const kind = POKES[poke.kind] ?? POKES.poke;
+        showToast({ header: kind.label ?? name, text: kind.says(name), icon: kind.icon, sound: playPoke, notify: true });
+      }
     }
   } catch {
     // Pokes wait for the next check.
   }
   await showPartnerMood();
   await showNewLetters(openLetters);
+}
+
+// When your own hearts run low, points you to a letter saved for such a moment.
+export async function suggestOpenWhen() {
+  try {
+    const me = getUserId();
+    const [letters, seals] = await Promise.all([fetchLetters(), fetchSeals()]);
+    const waiting = letters.find((letter) => letter.recipient_id === me && !letter.read_at && seals.has(letter.id));
+    if (!waiting) return;
+    const partner = await loadPartner();
+    showToast({
+      header: 'A letter for this moment',
+      text: `${partner?.name ?? 'Someone'} left you one to open when ${seals.get(waiting.id)}.`,
+      icon: ICON_LETTERS,
+      onClick: openLetters,
+    });
+  } catch {
+    // Nothing to suggest.
+  }
 }
 
 let pokeTimer = null;
@@ -150,6 +178,22 @@ export async function showLandingNotices({ onOpenDay }) {
     }
   } catch {
     // No reminder today.
+  }
+
+  try {
+    const todays = (await fetchAnswers())[0];
+    if (todays && todays.mine === null) {
+      showToast({
+        header: 'Question of the day',
+        text: todays.question,
+        icon: ICON_SIGN,
+        onClick: () => {
+          window.location.hash = '#/question';
+        },
+      });
+    }
+  } catch {
+    // Questions may not be set up yet.
   }
 
   try {

@@ -13,6 +13,8 @@ import { installClickSounds, installMusic } from './lib/sound.js';
 import { checkAdvancements } from './data/advancements.js';
 import { showLandingNotices, showNewPokes, watchForPokes } from './lib/notices.js';
 import { openChest } from './screens/chest.js';
+import { startLive, stopLive, onLive } from './lib/live.js';
+import { recordVisit } from './data/visits.js';
 
 const root = document.getElementById('app');
 const HOME = 'calendar';
@@ -61,6 +63,7 @@ function render() {
     checkAdvancements();
     showNewPokes(); // pokes, a partner feeling low, and new letters
     watchForPokes();
+    recordVisit().catch(() => {});
   }
   showWorldScreen(route);
 }
@@ -69,6 +72,11 @@ installDirtTile();
 installClickSounds();
 installMusic();
 await initSession();
+// Live updates start once someone is signed in, and stop when they leave.
+const syncLive = () => (getSession() ? startLive() : stopLive());
+syncLive();
+onSessionChange(syncLive);
+for (const topic of ['pokes', 'moods', 'letters']) onLive(topic, () => showNewPokes());
 onRouteChange(render);
 onSessionChange(render);
 render();

@@ -70,18 +70,29 @@ export async function saveDisplayName(displayName) {
     .single();
   if (error) throw error;
   profile = data;
-  memberNames = null;
+  members = null;
   return profile;
 }
 
-let memberNames = null;
+let members = null;
+
+// A Map of member id -> { name, avatar }.
+export async function loadMembers() {
+  if (!members) {
+    const { data, error } = await supabase.from('profiles').select('*');
+    if (error) throw error;
+    members = new Map(data.map((row) => [row.id, { name: row.display_name, avatar: row.avatar ?? null }]));
+  }
+  return members;
+}
 
 // A Map of member id -> display name, for "Added by" labels.
 export async function loadMemberNames() {
-  if (!memberNames) {
-    const { data, error } = await supabase.from('profiles').select('id, display_name');
-    if (error) throw error;
-    memberNames = new Map(data.map((row) => [row.id, row.display_name]));
-  }
-  return memberNames;
+  return new Map([...(await loadMembers())].map(([id, member]) => [id, member.name]));
+}
+
+export async function saveAvatar(avatar) {
+  const { error } = await supabase.from('profiles').update({ avatar }).eq('id', getUserId());
+  if (error) throw error;
+  members = null;
 }

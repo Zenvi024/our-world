@@ -1,8 +1,10 @@
 import { supabase } from '../supabase.js';
+import { announce } from '../lib/live.js';
 
 // The ledger tracks shared spending in pesos.
 //   expense    = someone paid for something (shared equally, or owed in full)
 //   settlement = someone handed the other money to pay a debt back
+// An expense is shared equally ('half'), owed in full ('full'), or a 'treat'.
 export async function fetchLedger() {
   const { data, error } = await supabase
     .from('ledger_entries')
@@ -17,11 +19,19 @@ export async function fetchLedger() {
 export async function addLedgerEntry(entry) {
   const { error } = await supabase.from('ledger_entries').insert(entry);
   if (error) throw error;
+  announce('ledger');
+}
+
+export async function updateLedgerEntry(id, fields) {
+  const { error } = await supabase.from('ledger_entries').update(fields).eq('id', id);
+  if (error) throw error;
+  announce('ledger');
 }
 
 export async function removeLedgerEntry(id) {
   const { error } = await supabase.from('ledger_entries').delete().eq('id', id);
   if (error) throw error;
+  announce('ledger');
 }
 
 // How much the other person owes "me", in centavos to avoid rounding drift.
@@ -29,6 +39,7 @@ export async function removeLedgerEntry(id) {
 export function balanceFor(entries, me) {
   let centavos = 0;
   for (const entry of entries) {
+    if (entry.kind === 'expense' && entry.split === 'treat') continue; // a treat: nobody owes
     const amount = Math.round(entry.amount * 100);
     const owed = entry.kind === 'settlement' || entry.split === 'full' ? amount : Math.round(amount / 2);
     centavos += entry.paid_by === me ? owed : -owed;

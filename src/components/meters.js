@@ -1,9 +1,10 @@
 import { h } from '../lib/dom.js';
 import { pixelArt } from '../art/pixel.js';
 import { ICON_HEART, ICON_DRUMSTICK } from '../art/sprites.js';
-import { getUserId, loadProfile } from '../session.js';
+import { getUserId, loadMembers } from '../session.js';
+import { onLive } from '../lib/live.js';
+import { avatarArt } from './avatar.js';
 import { fetchMoods, setMeter, MAX_METER } from '../data/moods.js';
-import { loadPartner } from '../data/pokes.js';
 import { playClick } from '../lib/sound.js';
 
 const TURN_MS = 6000; // how long each person's meters stay on screen
@@ -14,7 +15,7 @@ const REFRESH_MS = 60000;
 // right, and the name of whose they are in the middle. The display takes
 // turns between the two of you; tap the name to switch right away. You can
 // only set your own.
-export function createMeters() {
+export function createMeters({ onLowHearts } = {}) {
   const me = getUserId();
   let moods = new Map();
   let people = [{ id: me, name: 'Me' }];
@@ -31,7 +32,9 @@ export function createMeters() {
     );
   const hearts = row('hearts', ICON_HEART, 'My hearts');
   const hunger = row('hunger', ICON_DRUMSTICK, 'My hunger');
-  const name = h('button', { class: 'meter-name', type: 'button', 'data-quiet': 'true', onclick: () => turn(true) });
+  const nameText = h('span');
+  const face = h('span', { class: 'meter-face' });
+  const name = h('button', { class: 'meter-name', type: 'button', 'data-quiet': 'true', onclick: () => turn(true) }, face, nameText);
   const el = h(
     'div',
     { class: 'meters' },
@@ -51,10 +54,12 @@ export function createMeters() {
       });
     fill(hearts, mood?.hearts);
     fill(hunger, mood?.hunger);
-    name.textContent = person.name;
+    const asleep = Boolean(mood?.asleep_since);
+    nameText.textContent = asleep ? `${person.name} zZ` : person.name;
+    face.replaceChildren(avatarArt(person.avatar));
     name.setAttribute(
       'aria-label',
-      `Showing ${person.name}: ${mood?.hearts ?? 'no'} of ${MAX_METER} hearts, ${mood?.hunger ?? 'no'} of ${MAX_METER} hunger. Tap to switch.`,
+      `Showing ${person.name}${asleep ? ', asleep' : ''}: ${mood?.hearts ?? 'no'} of ${MAX_METER} hearts, ${mood?.hunger ?? 'no'} of ${MAX_METER} hunger. Tap to switch.`,
     );
     el.classList.toggle('meters--theirs', !mine);
   }
@@ -82,6 +87,7 @@ export function createMeters() {
     schedule(HOLD_MS);
     try {
       await setMeter(field, next);
+      if (field === 'hearts' && next <= 2) onLowHearts?.();
     } catch {
       moods.set(me, { ...moods.get(me), [field]: before });
       paint();
@@ -90,10 +96,10 @@ export function createMeters() {
 
   async function load() {
     try {
-      const [rows, partner, profile] = await Promise.all([fetchMoods(), loadPartner(), loadProfile()]);
+      const [rows, members] = await Promise.all([fetchMoods(), loadMembers()]);
       moods = rows;
-      people = [{ id: me, name: profile?.display_name ?? 'Me' }];
-      if (partner) people.push(partner);
+      people = [...members].map(([id, member]) => ({ id, ...member })).sort((a, b) => Number(b.id === me) - Number(a.id === me));
+      if (!people.length) people = [{ id: me, name: 'Me' }];
       showing = Math.min(showing, people.length - 1);
       paint();
       if (!turnTimer) schedule(TURN_MS);
@@ -107,10 +113,12 @@ export function createMeters() {
   const refresher = setInterval(() => {
     if (!document.hidden) load();
   }, REFRESH_MS);
+  const stopLive = onLive('moods', load);
   // Stop the timers if the bar is ever removed from the page.
   const stop = () => {
     clearTimeout(turnTimer);
     clearInterval(refresher);
+    stopLive();
   };
   return { el, stop };
 }

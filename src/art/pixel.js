@@ -32,6 +32,12 @@ export const PALETTE = {
   x: '#8a4528', // leather
   X: '#b0603a', // leather light
   z: '#4a2314', // leather dark
+  C: '#f6e6a6', // capybara cream
+  A: '#f28c1e', // orange
+  p: '#f7a8c9', // blossom pink
+  P: '#ffe3ee', // blossom center
+  i: '#5aa9e6', // water blue
+  I: '#b9dcf7', // water shine
 };
 
 function runs(rows, visit) {

@@ -4,8 +4,10 @@ import {
   ICON_CALENDAR,
   ICON_LETTERS,
   ICON_MAP,
-  ICON_SETTINGS,
   ICON_EMERALD,
+  ICON_CHEST,
+  ICON_SIGN,
+  ICON_SETTINGS,
 } from '../art/sprites.js';
 
 // Nine slots, like a hotbar. Empty slots are saved for later features.
@@ -14,15 +16,21 @@ const SLOTS = [
   { route: 'letters', label: 'Letters', icon: ICON_LETTERS },
   { route: 'advancements', label: 'Quests', icon: ICON_MAP },
   { route: 'ledger', label: 'Ledger', icon: ICON_EMERALD },
-  null,
-  null,
+  { route: 'lists', label: 'Lists', icon: ICON_CHEST },
+  { route: 'question', label: 'Question of the Day', icon: ICON_SIGN },
   null,
   null,
   { route: 'settings', label: 'Settings', icon: ICON_SETTINGS },
 ];
 
+const NAME_MS = 2200;
+
 export function createHotbar() {
   const links = new Map();
+  // The name of the selected item floats above the bar for a moment.
+  const name = h('p', { class: 'hotbar-name', 'aria-hidden': 'true' });
+  let nameTimer = null;
+
   const nav = h(
     'nav',
     { class: 'hotbar', 'aria-label': 'Main' },
@@ -39,11 +47,16 @@ export function createHotbar() {
   );
 
   function setActive(route) {
-    for (const [name, link] of links) {
-      if (name === route) link.setAttribute('aria-current', 'page');
+    for (const [slotRoute, link] of links) {
+      if (slotRoute === route) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');
     }
+    const slot = SLOTS.find((item) => item?.route === route);
+    name.textContent = slot?.label ?? '';
+    name.classList.add('hotbar-name--showing');
+    clearTimeout(nameTimer);
+    nameTimer = setTimeout(() => name.classList.remove('hotbar-name--showing'), NAME_MS);
   }
 
-  return { el: nav, setActive };
+  return { el: h('div', { class: 'hotbar-holder' }, name, nav), setActive };
 }
