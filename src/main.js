@@ -6,6 +6,7 @@ import './styles/charm.css';
 import './styles/cozy.css';
 import './styles/life.css';
 import './styles/pet.css';
+import './styles/reviews.css';
 import './styles/night.css';
 import { currentRoute, navigate, onRouteChange } from './router.js';
 import { initSession, getSession, onSessionChange } from './session.js';

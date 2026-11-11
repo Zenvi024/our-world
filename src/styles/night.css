@@ -83,12 +83,12 @@
 /* Text boxes on stone panels. */
 [data-theme='night'] .panel .input {
   color: var(--night-text);
-  background: #12142a;
+  background-color: #12142a; /* not the shorthand: menus keep their arrow */
   box-shadow: inset var(--edge) var(--edge) 0 rgba(0, 0, 0, 0.4);
 }
 
 [data-theme='night'] .panel .input:disabled {
-  background: #23263f;
+  background-color: #23263f;
 }
 
 [data-theme='night'] .panel .input::placeholder {

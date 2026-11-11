@@ -8,10 +8,11 @@ import {
   ICON_CHEST,
   ICON_SIGN,
   ICON_EGG,
+  ICON_ADVANCEMENTS,
   ICON_SETTINGS,
 } from '../art/sprites.js';
 
-// Nine slots, like a hotbar. Empty slots are saved for later features.
+// Nine slots, like a hotbar. All nine are now in use.
 const SLOTS = [
   { route: 'calendar', label: 'Memory Chest', icon: ICON_CALENDAR },
   { route: 'letters', label: 'Letters', icon: ICON_LETTERS },
@@ -20,7 +21,7 @@ const SLOTS = [
   { route: 'lists', label: 'Lists', icon: ICON_CHEST },
   { route: 'question', label: 'Question of the Day', icon: ICON_SIGN },
   { route: 'pet', label: 'Happybara', icon: ICON_EGG },
-  null,
+  { route: 'reviews', label: 'Our Reviews', icon: ICON_ADVANCEMENTS },
   { route: 'settings', label: 'Settings', icon: ICON_SETTINGS },
 ];
 
