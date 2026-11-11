@@ -11,16 +11,62 @@ const BLOCK = 8;
 const TICK_MS = 100;
 
 const SKY = ['#63b0ea', '#74bcee', '#86c8f1', '#99d3f4', '#addef7', '#c2e8f9', '#d7f1fc'];
-const GRASS = ['#6cc24a', '#5bb543', '#4fa63a', '#46952f'];
 const DIRT = ['#9b6a42', '#8a5a37', '#7b4f30', '#6b4329'];
 const STONE = ['#8f8f8f', '#858585', '#7a7a7a', '#6f6f6f'];
-const BLOSSOM_LIGHT = ['#ffe3ee', '#ffd3e4', '#ffd3e4'];
-const BLOSSOM = ['#f9b9d3', '#f7a8c9', '#f9b9d3', '#ffd3e4'];
-const BLOSSOM_SHADE = ['#e884b0', '#d97aa8', '#c97aae'];
-const BUSH = ['#3f8f2f', '#46952f', '#57a83c'];
 const ROOF = ['#c8423a', '#b5372f'];
-const PETAL = ['#ffd3e4', '#f7a8c9', '#ffffff'];
-const BLOOMS = ['#ff8fb8', '#ffd83d', '#ffffff', '#f7a8c9'];
+
+// The four seasons. Each is a set of colors for the grass, the trees, the
+// bushes and flowers, the far hills, and whatever drifts through the air.
+export const SEASONS = ['spring', 'summer', 'autumn', 'winter'];
+const LOOKS = {
+  spring: {
+    grass: ['#6cc24a', '#5bb543', '#4fa63a', '#46952f'],
+    leafLight: ['#ffe3ee', '#ffd3e4', '#ffd3e4'],
+    leaf: ['#f9b9d3', '#f7a8c9', '#f9b9d3', '#ffd3e4'],
+    leafShade: ['#e884b0', '#d97aa8', '#c97aae'],
+    bush: ['#3f8f2f', '#46952f', '#57a83c'],
+    blooms: ['#ff8fb8', '#ffd83d', '#ffffff', '#f7a8c9'],
+    hills: ['#a9d8bb', '#8cc89b'],
+    drift: { kind: 'petals', colors: ['#ffd3e4', '#f7a8c9', '#ffffff'], count: 12 },
+    flowers: true,
+  },
+  summer: {
+    grass: ['#7ad04e', '#63c043', '#52ad38', '#46952f'],
+    leafLight: ['#b5e68a', '#9fdb6e', '#a8e07a'],
+    leaf: ['#63b84a', '#57a83c', '#6cc24a', '#7acb58'],
+    leafShade: ['#2f7a2a', '#35802d', '#2a6b25'],
+    bush: ['#35802d', '#3f8f2f', '#4fa63a'],
+    blooms: ['#ffd83d', '#ffffff', '#ff8fb8', '#f28c1e'],
+    hills: ['#9fd68f', '#79c06e'],
+    drift: { kind: 'none' },
+    flowers: true,
+  },
+  autumn: {
+    grass: ['#b9b04a', '#a8a03f', '#9a8f38', '#8a7f33'],
+    leafLight: ['#ffd27a', '#ffc04d', '#ffcf66'],
+    leaf: ['#f28c1e', '#e8792a', '#f5a033', '#d9541e'],
+    leafShade: ['#b5451b', '#a03a18', '#8f3a1c'],
+    bush: ['#8a7f33', '#a8702c', '#b5832f'],
+    blooms: ['#f28c1e', '#ffd83d', '#d9541e', '#ffffff'],
+    hills: ['#e0c98a', '#cfae6a'],
+    drift: { kind: 'leaves', colors: ['#f28c1e', '#d9541e', '#ffc04d', '#b5451b'], count: 14 },
+    flowers: false,
+  },
+  winter: {
+    grass: ['#ffffff', '#f1f6fb', '#e3edf6', '#d5e3ef'],
+    leafLight: ['#ffffff', '#f6fbff', '#ffffff'],
+    leaf: ['#eef5fb', '#e3edf6', '#f6fbff', '#dbe7f2'],
+    leafShade: ['#c3d3e3', '#b6c8dc', '#cbd9e8'],
+    bush: ['#2f6b3a', '#35764a', '#3f8553'],
+    blooms: ['#d63a30', '#ffffff', '#d63a30', '#e2574c'],
+    hills: ['#e6eef6', '#d3e0ec'],
+    drift: { kind: 'snow', colors: ['#ffffff', '#f1f6fb', '#ffffff'], count: 42 },
+    flowers: true, // red berries on the bushes
+    snow: true,
+  },
+};
+// The season in use. (There is only ever one scene on screen.)
+let look = LOOKS.spring;
 
 // The capybaras are modeled on the one at home: cream and round, with a
 // brown snout, tiny ears, and something balanced on its head. Their sprites
@@ -158,8 +204,8 @@ const ZED = ['www', '.w.', 'www'];
 
 function drawHills(ctx, width, height, horizon) {
   const ridges = [
-    { color: '#a9d8bb', base: 13, a: 7, b: 4, fa: 31, fb: 13, shift: 0 },
-    { color: '#8cc89b', base: 6, a: 5, b: 3, fa: 19, fb: 9, shift: 40 },
+    { color: look.hills[0], base: 13, a: 7, b: 4, fa: 31, fb: 13, shift: 0 },
+    { color: look.hills[1], base: 6, a: 5, b: 3, fa: 19, fb: 9, shift: 40 },
   ];
   for (const ridge of ridges) {
     for (let x = 0; x < width; x += 2) {
@@ -202,8 +248,8 @@ function drawGround(ctx, width, height, levels) {
       const depth = y - y0;
       for (let x = x0; x < x0 + BLOCK; x += 1) {
         let color;
-        if (depth < 2) color = pick(GRASS, x, y, 1);
-        else if (depth < 4 && noise(x, y, 2) < (depth === 2 ? 0.6 : 0.25)) color = pick(GRASS, x, y, 1);
+        if (depth < 2) color = pick(look.grass, x, y, 1);
+        else if (depth < 4 && noise(x, y, 2) < (depth === 2 ? 0.6 : 0.25)) color = pick(look.grass, x, y, 1);
         else if (depth < BLOCK * 5 + Math.floor(noise(x, 0, 3) * 4)) color = pick(DIRT, x, y, 4);
         else color = pick(STONE, x, y, 5);
         rect(ctx, color, x, y, 1, 1);
@@ -246,9 +292,9 @@ function blossomPad(ctx, cx, cy, rx, ry) {
     const top = -Math.round(dome + noise(cx + px, cy, 11) * 1.2);
     const bottom = 1 + (noise(cx + px, cy, 12) < 0.35 ? 1 : 0);
     for (let py = top; py <= bottom; py += 1) {
-      let colors = BLOSSOM;
-      if (py <= top + 1) colors = BLOSSOM_LIGHT;
-      else if (py >= bottom - 1) colors = BLOSSOM_SHADE;
+      let colors = look.leaf;
+      if (py <= top + 1) colors = look.leafLight;
+      else if (py >= bottom - 1) colors = look.leafShade;
       rect(ctx, pick(colors, cx + px, cy + py, 13), cx + px, cy + py, 1, 1);
     }
   }
@@ -335,19 +381,20 @@ function drawBush(ctx, x, groundY, w) {
   for (let py = 0; py < 5; py += 1) {
     const inset = py === 0 ? 2 : py === 1 ? 1 : 0;
     for (let px = inset; px < w - inset; px += 1) {
-      rect(ctx, pick(BUSH, x + px, groundY - 5 + py, 14), x + px, groundY - 5 + py, 1, 1);
+      rect(ctx, pick(look.bush, x + px, groundY - 5 + py, 14), x + px, groundY - 5 + py, 1, 1);
     }
   }
-  for (let px = 1; px < w - 1; px += 2) {
+  if (look.snow) rect(ctx, '#ffffff', x + 2, groundY - 5, w - 4, 1);
+  for (let px = 1; look.flowers && px < w - 1; px += 2) {
     if (noise(x + px, groundY, 15) < 0.6) {
-      rect(ctx, pick(BLOOMS, x + px, groundY, 16), x + px, groundY - 4 + (px % 3), 1, 1);
+      rect(ctx, pick(look.blooms, x + px, groundY, 16), x + px, groundY - 4 + (px % 3), 1, 1);
     }
   }
 }
 
 // The cottage. (x, groundY) is the bottom-left corner of its walls.
 // Returns where the chimney smoke should start.
-function drawHouse(ctx, x, groundY) {
+function drawHouse(ctx, x, groundY, lightsOut) {
   const w = 36;
   const wallH = 16;
   const top = groundY - wallH;
@@ -392,9 +439,23 @@ function drawHouse(ctx, x, groundY) {
     rect(ctx, '#e0685c', cx + half - 1, y, 1, 1);
   }
   rect(ctx, '#8f2a25', x - 3, top, w + 6, 1);
+  if (look.snow) {
+    // Snow settles on the ridge, the eaves, and the chimney.
+    for (let i = 0; i < roofH; i += 1) {
+      const half = 21 - Math.round(i * 1.6);
+      const y = top - 1 - i;
+      const cx = x + w / 2;
+      if (i >= roofH - 3) rect(ctx, '#ffffff', cx - half, y, half * 2, 1);
+      else {
+        rect(ctx, '#ffffff', cx - half, y, 3 + (i % 2), 1);
+        rect(ctx, '#ffffff', cx + half - 3 - (i % 2), y, 3 + (i % 2), 1);
+      }
+    }
+    rect(ctx, '#ffffff', chimneyX - 1, chimneyTop - 1, 6, 1);
+  }
   // Round attic window glowing under the ridge.
   rect(ctx, '#5a3a22', x + 16, top - 8, 4, 4);
-  rect(ctx, '#ffe9a3', x + 17, top - 7, 2, 2);
+  rect(ctx, lightsOut ? '#27304f' : '#ffe9a3', x + 17, top - 7, 2, 2);
 
   // Door with a little step and a knob.
   const doorX = x + 15;
@@ -407,14 +468,14 @@ function drawHouse(ctx, x, groundY) {
   // Two warm windows with flower boxes.
   for (const winX of [x + 4, x + 25]) {
     rect(ctx, '#5a3a22', winX, groundY - 12, 7, 7);
-    rect(ctx, '#ffe9a3', winX + 1, groundY - 11, 5, 5);
-    rect(ctx, '#fff6c4', winX + 1, groundY - 11, 2, 2);
+    rect(ctx, lightsOut ? '#27304f' : '#ffe9a3', winX + 1, groundY - 11, 5, 5);
+    rect(ctx, lightsOut ? '#34406a' : '#fff6c4', winX + 1, groundY - 11, 2, 2);
     rect(ctx, '#5a3a22', winX + 3, groundY - 11, 1, 5);
     rect(ctx, '#5a3a22', winX + 1, groundY - 9, 5, 1);
     rect(ctx, '#7b4f30', winX - 1, groundY - 5, 9, 2);
     for (let px = 0; px < 9; px += 1) {
       const bloom = px % 2 === 0;
-      rect(ctx, bloom ? pick(BLOOMS, winX + px, groundY, 22) : '#46952f', winX - 1 + px, groundY - 6, 1, 1);
+      rect(ctx, bloom ? pick(look.blooms, winX + px, groundY, 22) : '#46952f', winX - 1 + px, groundY - 6, 1, 1);
     }
   }
   // Stepping stones leading from the door.
@@ -431,11 +492,11 @@ function drawTufts(ctx, width, levels, houseX) {
     const roll = noise(x, 7, 8);
     const y = groundAt(levels, x);
     if (roll < 0.16) {
-      rect(ctx, noise(x, 3, 9) < 0.5 ? '#5bb543' : '#46952f', x, y - 1 - Math.floor(noise(x, 5, 10) * 2), 1, 3);
-    } else if (roll > 0.94) {
+      rect(ctx, noise(x, 3, 9) < 0.5 ? look.grass[1] : look.grass[3], x, y - 1 - Math.floor(noise(x, 5, 10) * 2), 1, 3);
+    } else if (roll > 0.94 && look.flowers && !look.snow) {
       // A tiny wildflower: a stem with a colored dot.
       rect(ctx, '#46952f', x, y - 2, 1, 2);
-      rect(ctx, pick(BLOOMS, x, 1, 17), x, y - 3, 1, 1);
+      rect(ctx, pick(look.blooms, x, 1, 17), x, y - 3, 1, 1);
     }
   }
 }
@@ -496,13 +557,161 @@ function drawSmoke(ctx, origin, seconds) {
   }
 }
 
-function drawPetals(ctx, width, horizon, seconds) {
-  for (let i = 0; i < 12; i += 1) {
-    const fall = 5 + noise(i, 1, 30) * 4;
+// Whatever the season sends drifting down: petals, leaves, or snow.
+function drawDrift(ctx, width, horizon, seconds) {
+  const drift = look.drift;
+  if (drift.kind === 'none') return;
+  const snow = drift.kind === 'snow';
+  const leaves = drift.kind === 'leaves';
+  for (let i = 0; i < drift.count; i += 1) {
+    const fall = (snow ? 4 : 5) + noise(i, 1, 30) * (leaves ? 6 : 4);
     const y = (noise(i, 2, 31) * horizon + seconds * fall) % (horizon + 6);
-    const x =
-      (noise(i, 3, 32) * width + seconds * 2 + Math.sin(seconds * 1.3 + i * 2) * 3) % (width + 4);
-    rect(ctx, PETAL[i % PETAL.length], Math.round(x), Math.round(y), 1, 1);
+    const sway = leaves ? 6 : 3;
+    const x = (noise(i, 3, 32) * width + seconds * (snow ? 1 : 2) + Math.sin(seconds * 1.3 + i * 2) * sway + width) % (width + 4);
+    rect(ctx, drift.colors[i % drift.colors.length], Math.round(x), Math.round(y), leaves && i % 3 === 0 ? 2 : 1, 1);
+  }
+}
+
+// The weather changes every three hours and is the same for both of you:
+// mostly clear, sometimes rain (snow in winter), now and then a rainbow.
+function weatherNow() {
+  const manila = new Date(Date.now() + 8 * 3_600_000);
+  const block = Math.floor(manila.getTime() / (3 * 3_600_000));
+  const roll = noise(block, 7, 90);
+  if (roll < 0.14) return 'rain';
+  if (roll < 0.22) return 'rainbow';
+  return 'clear';
+}
+
+function drawRainbow(ctx, width, horizon) {
+  const bands = ['#ff6b6b', '#ffa94d', '#ffe066', '#8ce99a', '#74c0fc', '#b197fc'];
+  const cx = Math.round(width * 0.36);
+  const radius = Math.round(Math.min(width * 0.62, horizon * 0.52));
+  ctx.globalAlpha = 0.5;
+  bands.forEach((color, i) => {
+    const r = radius - i * 2;
+    for (let x = cx - r; x <= cx + r; x += 1) {
+      const y = Math.round(horizon - Math.sqrt(Math.max(0, r * r - (x - cx) * (x - cx))));
+      rect(ctx, color, x, y, 1, 2);
+    }
+  });
+  ctx.globalAlpha = 1;
+}
+
+function drawRain(ctx, width, height, seconds) {
+  for (let i = 0; i < 46; i += 1) {
+    const x = (noise(i, 1, 95) * (width + 20) + seconds * 22) % (width + 20) - 10;
+    const y = (noise(i, 2, 96) * height + seconds * (110 + noise(i, 3, 97) * 50)) % height;
+    rect(ctx, 'rgba(200, 222, 245, 0.75)', Math.round(x), Math.round(y), 1, 3);
+  }
+}
+
+// Butterflies by day in the warm seasons.
+function drawButterflies(ctx, width, horizon, seconds) {
+  const colors = ['#fff3a6', '#ffffff', '#ffb3d1'];
+  for (let i = 0; i < 3; i += 1) {
+    const x = Math.round(((noise(i, 1, 100) * width + seconds * (2 + i)) % (width + 10)) - 5 + Math.sin(seconds * 0.9 + i * 2) * 6);
+    const y = Math.round(horizon - 10 - noise(i, 2, 101) * 22 - Math.abs(Math.sin(seconds * 1.4 + i)) * 7);
+    const open = Math.floor(seconds * 6 + i) % 2 === 0;
+    rect(ctx, colors[i], x - (open ? 1 : 0), y, open ? 3 : 1, 1);
+    rect(ctx, '#5a3a22', x, y + (open ? 0 : 1), 1, 1);
+  }
+}
+
+// Now and then two birds cross the sky.
+function drawBirds(ctx, width, horizon, seconds) {
+  const lap = 47;
+  const t = (seconds % lap) / 9;
+  if (t >= 1) return;
+  const flap = Math.floor(seconds * 4) % 2;
+  for (let i = 0; i < 2; i += 1) {
+    const x = Math.round(t * (width + 30) - 12 - i * 7);
+    const y = Math.round(horizon * (0.22 + noise(Math.floor(seconds / lap), i, 105) * 0.2) + Math.sin(seconds * 2 + i) * 2 + i * 3);
+    rect(ctx, '#3b3f55', x, y + flap, 1, 1);
+    rect(ctx, '#3b3f55', x + 1, y + 1 - flap, 1, 1);
+    rect(ctx, '#3b3f55', x + 2, y + flap, 1, 1);
+  }
+}
+
+// Fireflies come out at dusk and stay through the night.
+function drawFireflies(ctx, width, horizon, seconds) {
+  for (let i = 0; i < 9; i += 1) {
+    const x = Math.round(noise(i, 1, 110) * width + Math.sin(seconds * 0.5 + i * 1.7) * 7);
+    const y = Math.round(horizon - 4 - noise(i, 2, 111) * 30 + Math.cos(seconds * 0.6 + i) * 4);
+    const glow = (Math.sin(seconds * 2.2 + i * 2.4) + 1) / 2;
+    if (glow < 0.25) continue;
+    ctx.globalAlpha = glow;
+    rect(ctx, 'rgba(255, 243, 166, 0.3)', x - 1, y - 1, 3, 3);
+    rect(ctx, '#fff7b8', x, y, 1, 1);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// A shooting star every half minute or so. Returns true while one is crossing.
+const STAR_LAP = 27;
+function drawShootingStar(ctx, width, horizon, seconds) {
+  const t = seconds % STAR_LAP;
+  if (t > 1.3) return false;
+  const lap = Math.floor(seconds / STAR_LAP);
+  const startX = width * (0.35 + noise(lap, 1, 115) * 0.6);
+  const startY = horizon * (0.05 + noise(lap, 2, 116) * 0.25);
+  const x = Math.round(startX - t * 34);
+  const y = Math.round(startY + t * 17);
+  for (let i = 0; i < 7; i += 1) {
+    ctx.globalAlpha = 1 - i / 7;
+    rect(ctx, i === 0 ? '#ffffff' : '#cfd9ff', x + i * 2, y - i, i === 0 ? 2 : 1, 1);
+  }
+  ctx.globalAlpha = 1;
+  return true;
+}
+
+// The mailbox stands on a post. When a letter waits, its yellow flag goes
+// up and a white envelope peeks out.
+function drawMailbox(ctx, x, groundY, flagUp) {
+  rect(ctx, '#8a5a37', x + 3, groundY - 7, 2, 7);
+  rect(ctx, '#6b4329', x + 3, groundY - 7, 1, 7);
+  rect(ctx, '#d63a30', x, groundY - 12, 8, 5);
+  rect(ctx, '#f0685c', x, groundY - 12, 8, 1);
+  rect(ctx, '#a82a22', x, groundY - 8, 8, 1);
+  rect(ctx, '#8f2019', x + 5, groundY - 11, 1, 3);
+  if (look.snow) rect(ctx, '#ffffff', x, groundY - 13, 8, 1);
+  if (flagUp) {
+    rect(ctx, '#ffffff', x + 1, groundY - 11, 3, 2);
+    rect(ctx, '#6b4329', x + 8, groundY - 17, 1, 7);
+    rect(ctx, '#ffd83d', x + 9, groundY - 17, 3, 3);
+  } else {
+    rect(ctx, '#ffd83d', x + 8, groundY - 9, 3, 1);
+  }
+}
+
+// A few things that belong to one season only, standing by the house.
+function drawSeasonProps(ctx, season, houseX, groundY, levels) {
+  if (season === 'autumn') {
+    for (const px of [houseX + 9, houseX + 23]) {
+      rect(ctx, '#f28c1e', px, groundY - 3, 4, 3);
+      rect(ctx, '#ffb648', px + 1, groundY - 3, 1, 2);
+      rect(ctx, '#46952f', px + 1, groundY - 4, 1, 1);
+    }
+  }
+  const x = houseX - 15;
+  const y = groundAt(levels, x + 2);
+  if (season === 'winter') {
+    // A small snowman with a red scarf.
+    rect(ctx, '#ffffff', x, y - 4, 5, 4);
+    rect(ctx, '#dbe6f0', x, y - 1, 5, 1);
+    rect(ctx, '#ffffff', x + 1, y - 7, 3, 3);
+    rect(ctx, '#2b2a26', x + 1, y - 6, 1, 1);
+    rect(ctx, '#2b2a26', x + 3, y - 6, 1, 1);
+    rect(ctx, '#f28c1e', x + 2, y - 5, 1, 1);
+    rect(ctx, '#d63a30', x + 1, y - 4, 3, 1);
+  } else if (season === 'summer') {
+    // Two sunflowers.
+    for (const [dx, tall] of [[0, 9], [4, 7]]) {
+      rect(ctx, '#46952f', x + dx + 1, y - tall, 1, tall);
+      rect(ctx, '#6cc24a', x + dx + 2, y - tall + 4, 1, 1);
+      rect(ctx, '#ffd83d', x + dx, y - tall - 2, 3, 3);
+      rect(ctx, '#7b4f30', x + dx + 1, y - tall - 1, 1, 1);
+    }
   }
 }
 
@@ -524,12 +733,26 @@ function createCapybaras(width, cast) {
   });
 }
 
+// Each capybara may be asleep (it stays put, eyes closed) or have a place
+// to be (`target`, an x position it hops toward and then stays at).
 function moveCapybaras(herd, width, tick) {
   for (const capybara of herd) {
+    if (capybara.asleep) {
+      capybara.hop = 0;
+      continue;
+    }
+    const hasTarget = capybara.target != null;
+    const arrived = hasTarget && Math.abs(capybara.x - capybara.target) < 1;
+    if (arrived) {
+      capybara.x = capybara.target;
+      capybara.hop = 0;
+      continue;
+    }
     if (capybara.resting > 0) {
       capybara.resting -= 1;
       continue;
     }
+    if (hasTarget) capybara.direction = capybara.target > capybara.x ? 1 : -1;
     capybara.hop += 1;
     capybara.x += capybara.direction * (capybara.baby ? 0.55 : 0.7);
     if (capybara.x < 2) capybara.direction = 1;
@@ -538,8 +761,8 @@ function moveCapybaras(herd, width, tick) {
       // Landed: take a breath, sometimes a long one, sometimes turn around.
       capybara.hop = 0;
       const roll = noise(tick, capybara.seed, 40);
-      capybara.resting = roll < 0.2 ? 25 + Math.floor(roll * 150) : 3;
-      if (noise(tick, capybara.seed, 41) > 0.9) capybara.direction *= -1;
+      capybara.resting = hasTarget ? 2 : roll < 0.2 ? 25 + Math.floor(roll * 150) : 3;
+      if (!hasTarget && noise(tick, capybara.seed, 41) > 0.9) capybara.direction *= -1;
     }
   }
 }
@@ -551,18 +774,34 @@ function capybaraSpot(capybara, levels) {
   return { x, y: groundAt(levels, x + capybara.w / 2) - capybara.h - lift };
 }
 
-function drawCapybaras(ctx, herd, levels) {
+function drawCapybaras(ctx, herd, levels, seconds) {
   for (const capybara of herd) {
     const { x, y } = capybaraSpot(capybara, levels);
     drawCapybara(ctx, x, y, capybara);
+    if (capybara.asleep) {
+      // Little Zs drift up from a sleeper.
+      for (let i = 0; i < 2; i += 1) {
+        const age = (seconds / 3 + i / 2) % 1;
+        ctx.globalAlpha = 1 - age;
+        drawSprite(ctx, ZED, Math.round(x + capybara.w - 2 + age * 4 + i * 2), Math.round(y - 3 - hatRise(capybara.hat) - age * 9), { w: '#ffffff' });
+      }
+      ctx.globalAlpha = 1;
+    }
   }
 }
 
 // Draws the scene into the canvas and keeps it gently alive.
-// Returns controls: stop(), tap(clientX, clientY), setCampfire({ lit, roaring }),
-// setSleepers(count), setCast(cast), and refresh(). `onMove` is told where
-// each capybara's head is (in CSS pixels) so name tags can follow them.
-export function startLandscape(canvas, { onMove } = {}) {
+// Options: `season` to start in, and `onMove`, which is told where each
+// capybara's head is (in CSS pixels) so name tags can follow them.
+// Returns controls:
+//   stop(), refresh()
+//   tap(clientX, clientY) -> 'capybara' | 'campfire' | 'mailbox' | 'star' | null
+//   setCampfire({ lit, roaring })
+//   setCast(cast)
+//   setPeople({ asleep: [first, second], together })
+//   setMail(waiting)        raises the mailbox flag
+//   setSeason(season)
+export function startLandscape(canvas, { onMove, season: startSeason = 'spring' } = {}) {
   const ctx = canvas.getContext('2d');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let sky;
@@ -573,38 +812,58 @@ export function startLandscape(canvas, { onMove } = {}) {
   let hearts = []; // little hearts that float up when a capybara is tapped
   let chimney = { x: 0, y: 0 };
   let campfire = { x: 0, y: 0 };
+  let mailbox = { x: 0, y: 0 };
   let fire = { lit: false, roaring: false };
-  let sleepers = 0;
+  let people = { asleep: [false, false], together: false };
+  let mail = false;
+  let season = SEASONS.includes(startSeason) ? startSeason : 'spring';
+  let weather = weatherNow();
   let horizon = 0;
   let scale = 3;
   let phase = skyPhase();
   let tick = 0;
   let timer = null;
+  let starSeenAt = -Infinity; // when a shooting star last crossed (ms)
+
+  const lightsOut = () => people.asleep[0] && people.asleep[1];
+
+  // Tells each capybara how its person is doing.
+  function direct() {
+    // Together by the fire: one on each side, or both on the left if the
+    // fire is too near the edge.
+    let seats = [campfire.x - 18, campfire.x + 6];
+    if (seats[1] + 14 > canvas.width) seats = [campfire.x - 33, campfire.x - 18];
+    herd.forEach((capybara, i) => {
+      if (capybara.baby) return;
+      capybara.asleep = Boolean(people.asleep[i]);
+      capybara.target = people.together && !capybara.asleep ? Math.max(2, seats[i] ?? seats[0]) : null;
+    });
+  }
 
   function paint() {
     const seconds = (tick * TICK_MS) / 1000;
+    const dark = phase === 'night' || phase === 'dusk';
+    const wet = weather === 'rain' && !look.snow;
     ctx.drawImage(sky, 0, 0);
+    if (phase === 'night' && !wet && !reduceMotion && drawShootingStar(ctx, canvas.width, horizon, seconds)) starSeenAt = Date.now();
     drawClouds(ctx, canvas.width, horizon, seconds, phase);
+    if (!dark && !wet) drawBirds(ctx, canvas.width, horizon, seconds);
     ctx.drawImage(front, 0, 0);
-    if (sleepers > 0) {
-      // Someone is asleep: little Zs drift up from the roof instead of smoke.
-      for (let i = 0; i < 2; i += 1) {
-        const age = (seconds / 3 + i / 2) % 1;
-        ctx.globalAlpha = 1 - age;
-        drawSprite(ctx, ZED, Math.round(chimney.x - 12 + age * 5 + i * 2), Math.round(chimney.y + 4 - age * 14), { w: '#ffffff' });
-      }
-      ctx.globalAlpha = 1;
-    } else {
-      drawSmoke(ctx, chimney, seconds);
-    }
+    drawSmoke(ctx, chimney, seconds);
     if (fire.lit) drawFlames(ctx, campfire.x, campfire.y, tick, fire.roaring);
-    drawCapybaras(ctx, herd, levels);
+    drawCapybaras(ctx, herd, levels, seconds);
     for (const heart of hearts) {
       ctx.globalAlpha = Math.max(0, 1 - heart.age / 14);
       drawSprite(ctx, MINI_HEART, Math.round(heart.x), Math.round(heart.y - heart.age), { r: '#e2574c' });
     }
     ctx.globalAlpha = 1;
-    drawPetals(ctx, canvas.width, horizon, seconds);
+    if (!dark && !wet && (season === 'spring' || season === 'summer')) drawButterflies(ctx, canvas.width, horizon, seconds);
+    if (dark && !wet && season !== 'winter') drawFireflies(ctx, canvas.width, horizon, seconds);
+    drawDrift(ctx, canvas.width, horizon, seconds);
+    if (wet) {
+      rect(ctx, 'rgba(70, 90, 120, 0.16)', 0, 0, canvas.width, canvas.height);
+      drawRain(ctx, canvas.width, canvas.height, seconds);
+    }
     onMove?.(
       herd.map((capybara) => {
         const { x, y } = capybaraSpot(capybara, levels);
@@ -623,11 +882,13 @@ export function startLandscape(canvas, { onMove } = {}) {
     canvas.height = height;
     canvas.style.width = `${width * scale}px`;
     canvas.style.height = `${height * scale}px`;
+    look = LOOKS[season];
 
     // On wide screens the house sits to the left of the Play button;
     // on phones it sits in the middle, below it.
     const wide = width > height * 1.1;
     const houseX = Math.round(width * (wide ? 0.27 : 0.5)) - 18;
+    const mailX = Math.max(3, houseX - 26);
     const yard = {
       from: Math.floor((houseX - 6) / BLOCK),
       to: Math.floor((houseX + 36 + 5) / BLOCK),
@@ -642,11 +903,13 @@ export function startLandscape(canvas, { onMove } = {}) {
     [sky, skyCtx] = makeLayer(width, height);
     [front, frontCtx] = makeLayer(width, height);
     phase = skyPhase();
+    weather = weatherNow();
     drawSky(skyCtx, width, height, horizon, wide, phase);
+    if (weather === 'rainbow' && phase !== 'night') drawRainbow(skyCtx, width, horizon);
     drawMountains(frontCtx, width, horizon);
     drawHills(frontCtx, width, height, horizon);
 
-    // Cherry blossom trees stand behind the house, so they are drawn first.
+    // The trees stand behind the house, so they are drawn first.
     drawCherryTree(frontCtx, houseX - 7, groundAt(levels, houseX - 7), 1.15);
     drawCherryTree(frontCtx, houseX + 43, groundAt(levels, houseX + 43), 0.95, true);
     if (wide) {
@@ -654,11 +917,15 @@ export function startLandscape(canvas, { onMove } = {}) {
     }
 
     drawGround(frontCtx, width, height, levels);
-    chimney = drawHouse(frontCtx, houseX, yardY);
+    chimney = drawHouse(frontCtx, houseX, yardY, lightsOut());
     drawBush(frontCtx, houseX - 5, yardY, 7);
     drawBush(frontCtx, houseX + 35, yardY, 6);
     drawTufts(frontCtx, width, levels, houseX);
-    drawLilies(frontCtx, width, levels, yard);
+    // Lilies keep clear of the yard, the mailbox, and whatever stands beside it.
+    drawLilies(frontCtx, width, levels, { from: Math.floor((mailX - 2) / BLOCK), to: yard.to });
+    drawSeasonProps(frontCtx, season, houseX, yardY, levels);
+    mailbox = { x: mailX, y: groundAt(levels, mailX + 4) };
+    drawMailbox(frontCtx, mailbox.x, mailbox.y, mail);
 
     // The campfire sits on the grass just past the trees.
     const fireX = Math.min(width - 9, houseX + 57);
@@ -669,10 +936,11 @@ export function startLandscape(canvas, { onMove } = {}) {
       frontCtx.globalCompositeOperation = 'source-atop';
       rect(frontCtx, LAND_TINT[phase], 0, 0, width, height);
       frontCtx.globalCompositeOperation = 'source-over';
-      if (phase !== 'dawn') lightWindows(frontCtx, houseX, yardY);
+      if (phase !== 'dawn' && !lightsOut()) lightWindows(frontCtx, houseX, yardY);
     }
 
     if (!herd.length || herd[0].span !== width) herd = createCapybaras(width, cast);
+    direct();
     paint();
   }
 
@@ -680,15 +948,21 @@ export function startLandscape(canvas, { onMove } = {}) {
     tick += 1;
     moveCapybaras(herd, canvas.width, tick);
     hearts = hearts.filter((heart) => (heart.age += 1) < 14);
+    // Sitting together by the fire, a heart rises between them now and then.
+    const [first, second] = herd;
+    if (people.together && tick % 55 === 0 && first && second && [first, second].every((capybara) => capybara.target != null && capybara.x === capybara.target)) {
+      const spot = capybaraSpot(first, levels);
+      hearts.push({ x: (first.x + second.x + first.w) / 2 - 2, y: spot.y - 6, age: 0 });
+    }
     paint();
   }
 
   build();
   window.addEventListener('resize', build);
   if (!reduceMotion) timer = setInterval(step, TICK_MS);
-  // The sky changes with the hour.
+  // The sky changes with the hour, and the weather every few hours.
   const clock = setInterval(() => {
-    if (skyPhase() !== phase) build();
+    if (skyPhase() !== phase || weatherNow() !== weather) build();
   }, 60_000);
 
   return {
@@ -697,22 +971,32 @@ export function startLandscape(canvas, { onMove } = {}) {
       clearInterval(timer);
       clearInterval(clock);
     },
-    // Tells you what was tapped: 'capybara', 'campfire', or null.
+    // Tells you what was tapped: 'capybara', 'campfire', 'mailbox', 'star', or null.
     tap(clientX, clientY) {
       const box = canvas.getBoundingClientRect();
       const x = (clientX - box.left) / scale;
       const y = (clientY - box.top) / scale;
+      // A tap right on the mailbox opens it, even with a capybara standing in front.
+      if (x >= mailbox.x - 2 && x <= mailbox.x + 13 && y >= mailbox.y - 19 && y <= mailbox.y - 5) return 'mailbox';
       for (const capybara of herd) {
         const spot = capybaraSpot({ ...capybara, hop: 0 }, levels);
         if (x >= capybara.x - 3 && x <= capybara.x + capybara.w + 3 && y >= spot.y - 8 && y <= spot.y + capybara.h + 4) {
-          capybara.resting = 0;
-          capybara.hop = 1;
+          if (!capybara.asleep) {
+            capybara.resting = 0;
+            capybara.hop = 1;
+          }
           hearts.push({ x: capybara.x + capybara.w / 2 - 2, y: spot.y - 4 - hatRise(capybara.hat), age: 0 });
           if (reduceMotion) paint();
           return 'capybara';
         }
       }
       if (Math.abs(x - campfire.x) <= 8 && y >= campfire.y - 14 && y <= campfire.y + 4) return 'campfire';
+      if (x >= mailbox.x - 5 && x <= mailbox.x + 16 && y >= mailbox.y - 22 && y <= mailbox.y + 4) return 'mailbox';
+      // A tap on the sky just after a shooting star is a wish.
+      if (y < horizon * 0.7 && Date.now() - starSeenAt < 6000) {
+        starSeenAt = -Infinity;
+        return 'star';
+      }
       return null;
     },
     setCampfire(state) {
@@ -725,13 +1009,31 @@ export function startLandscape(canvas, { onMove } = {}) {
       cast = next;
       const fresh = createCapybaras(canvas.width, cast);
       herd = fresh.map((capybara, i) => (herd[i] ? { ...capybara, x: herd[i].x, direction: herd[i].direction } : capybara));
+      direct();
       paint();
+    },
+    // How the two people are: who has said good night, and whether both
+    // are here right now. Their capybaras follow suit.
+    setPeople(next) {
+      const wasOut = lightsOut();
+      people = { ...people, ...next };
+      if (lightsOut() !== wasOut) build(); // the cottage lights go out, or come back on
+      else {
+        direct();
+        if (reduceMotion) paint();
+      }
+    },
+    setMail(waiting) {
+      if (Boolean(waiting) === mail) return;
+      mail = Boolean(waiting);
+      build();
+    },
+    setSeason(next) {
+      if (!SEASONS.includes(next) || next === season) return;
+      season = next;
+      build();
     },
     // Redraws the whole scene (for example, when night mode is switched).
     refresh: () => build(),
-    setSleepers(count) {
-      sleepers = count;
-      if (reduceMotion) paint();
-    },
   };
 }

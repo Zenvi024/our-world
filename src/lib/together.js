@@ -11,6 +11,15 @@ const dayNumber = (date) => {
 
 export const daysBetween = (from, to) => Math.round(dayNumber(to) - dayNumber(from));
 
+// Which monthsary a date is (1 for December 13, 2024; 12 for the first
+// anniversary), or 0 if it is not the 13th or is before you were together.
+export function monthsaryNumber(date) {
+  const start = parts(TOGETHER_SINCE);
+  const day = parts(date);
+  if (day.day !== start.day) return 0;
+  return Math.max(0, (day.year - start.year) * 12 + (day.month - start.month));
+}
+
 export function togetherStats(today = todayManila()) {
   const start = parts(TOGETHER_SINCE);
   const now = parts(today);

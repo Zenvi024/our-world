@@ -5,7 +5,7 @@ import { AVATAR_HATS } from '../art/outfits.js';
 import { cachedSplash, fetchSplash } from '../data/splash.js';
 import { startLandscape } from '../art/landscape.js';
 import { pixelArt } from '../art/pixel.js';
-import { ICON_HEART, ICON_MOON, ICON_SUN, ICON_ALBUM, LILY } from '../art/sprites.js';
+import { ICON_HEART, ICON_MOON, ICON_SUN, ICON_ALBUM, ICON_ADVANCEMENTS, ICON_SPRING, ICON_SUMMER, ICON_AUTUMN, ICON_WINTER, LILY } from '../art/sprites.js';
 import { playPoke, playDone, playPop } from '../lib/sound.js';
 import { createMusicButton } from '../components/musicButton.js';
 import { openModal } from '../components/modal.js';
@@ -15,7 +15,11 @@ import { onLive, isPartnerOnline } from '../lib/live.js';
 import { getUserId } from '../session.js';
 import { loadPartner, sendPoke, POKES, POKE_MENU } from '../data/pokes.js';
 import { fetchMoods, setAsleep, isAsleep } from '../data/moods.js';
-import { isNight, setNight } from '../lib/theme.js';
+import { isNight, setNight, getSeason, setSeason, nextSeason, SEASON_NAMES } from '../lib/theme.js';
+import { fetchLetters } from '../data/letters.js';
+import { photoOfTheDay } from '../data/memories.js';
+import { signedUrls } from '../data/photos.js';
+import { todayManila, longDate } from '../lib/dates.js';
 import { recordVisit, campfireState } from '../data/visits.js';
 
 const SPLASH_SECONDS = 5;
@@ -175,12 +179,13 @@ function createGreetings(scene) {
     }, 2600);
   };
 
-  // Zs rise from the roof for each of you who has said good night.
+  // Whoever has said good night: their capybara curls up asleep, and when
+  // both have, the cottage lights go out.
   function showSleepers() {
     const mine = isAsleep(moods.get(getUserId()));
     const theirs = partner && isAsleep(moods.get(partner.id));
     note.textContent = theirs ? `${partner.name} is asleep.` : '';
-    scene.setSleepers(Number(mine) + Number(Boolean(theirs)));
+    scene.setPeople({ asleep: [mine, Boolean(theirs)] });
   }
 
   async function refresh() {
@@ -274,13 +279,36 @@ function createNightButton(onSwitch) {
   return button;
 }
 
+const WISHES = ['Wish made. Keep it secret.', 'Wish made. It is already on its way.', 'Quick, make a wish! There. Done.'];
+
 // The capybaras have names of their own: Zen's is Dook and Jay's is Boop.
 // (Anyone else's capybara simply carries their display name.)
 const CAPYBARA_NAMES = { zen: 'Dook', jay: 'Boop' };
 const capybaraName = (displayName) => CAPYBARA_NAMES[String(displayName).trim().toLowerCase()] ?? displayName;
 
+// A square button under the night switch that steps through the seasons.
+function createSeasonButton(onSwitch) {
+  const icons = { spring: ICON_SPRING, summer: ICON_SUMMER, autumn: ICON_AUTUMN, winter: ICON_WINTER };
+  const button = h('button', { class: 'btn night-button season-button', type: 'button' });
+  const show = () => {
+    const season = getSeason();
+    button.replaceChildren(pixelArt(icons[season]));
+    button.dataset.season = season;
+    button.setAttribute('aria-label', `Season: ${SEASON_NAMES[season]}. Tap for ${SEASON_NAMES[nextSeason(season)].toLowerCase()}.`);
+    button.title = SEASON_NAMES[season];
+  };
+  button.addEventListener('click', () => {
+    const season = nextSeason(getSeason());
+    setSeason(season);
+    show();
+    onSwitch(season);
+  });
+  show();
+  return button;
+}
+
 // Shows the title screen inside root. Returns a function that cleans it up.
-export function mountTitle(root, { onEnter }) {
+export function mountTitle(root, { onEnter, onOpenDay }) {
   const canvas = h('canvas', { class: 'landscape', 'aria-hidden': 'true' });
   const splash = createSplash();
   const music = createMusicButton();
@@ -350,6 +378,7 @@ export function mountTitle(root, { onEnter }) {
     ),
     music.el,
     createNightButton(() => scene.refresh()),
+    createSeasonButton((season) => scene.setSeason(season)),
   );
 
   root.replaceChildren(screen);
@@ -357,6 +386,7 @@ export function mountTitle(root, { onEnter }) {
   const tags = h('div', { class: 'name-tags', 'aria-hidden': 'true' });
   canvas.after(tags);
   const scene = startLandscape(canvas, {
+    season: getSeason(),
     onMove(spots) {
       spots.forEach((spot, i) => {
         const tag = tags.children[i];
@@ -392,12 +422,50 @@ export function mountTitle(root, { onEnter }) {
       // The fire waits until visits are set up.
     }
     scene.setCampfire({ lit: fireState.lit, roaring: fireState.lit && isPartnerOnline() });
+    scene.setPeople({ together: isPartnerOnline() }); // Dook and Boop sit by the fire together
   }
   if (signedIn) {
     const greetings = createGreetings(scene);
     greetSlot.replaceWith(greetings.el);
     stops.push(greetings.stop, onLive('visits', tendFire), onLive('presence', tendFire), onLive('pet', gatherCast), onLive('moods', gatherCast));
     gatherCast();
+
+    // The mailbox flag goes up while a letter waits unread.
+    const checkMail = () =>
+      fetchLetters()
+        .then((letters) => scene.setMail(letters.some((letter) => letter.recipient_id === getUserId() && !letter.read_at)))
+        .catch(() => {});
+    stops.push(onLive('letters', checkMail));
+    checkMail();
+
+    // A photo of the day, taped to the corner of the sky.
+    photoOfTheDay(todayManila())
+      .then(async (pick) => {
+        if (!pick) return;
+        const url = (await signedUrls([pick.thumbPath])).get(pick.thumbPath);
+        if (!url || !screen.isConnected) return;
+        const [monthDay, year] = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
+          .format(new Date(`${pick.date}T00:00:00Z`))
+          .split(', ');
+        screen.append(
+          h(
+            'button',
+            {
+              class: 'daily-photo',
+              type: 'button',
+              'aria-label': `Photo of the day: ${longDate(pick.date)}. Tap to open that day.`,
+              title: pick.title || 'Photo of the day',
+              onclick: () => onOpenDay?.(pick.date),
+            },
+            h('span', { class: 'daily-tape', 'aria-hidden': 'true' }),
+            h('img', { alt: '', src: url }),
+            h('span', { class: 'daily-date' }, monthDay, h('span', { class: 'daily-year' }, `, ${year}`)),
+          ),
+        );
+      })
+      .catch(() => {
+        // No photo today.
+      });
     recordVisit().catch(() => {}).then(tendFire);
   }
 
@@ -406,6 +474,11 @@ export function mountTitle(root, { onEnter }) {
     if (event.target.closest('button, a, input, .overlay')) return;
     const hit = scene.tap(event.clientX, event.clientY);
     if (hit === 'capybara') playPop();
+    if (hit === 'mailbox' && signedIn) window.location.hash = '#/letters';
+    if (hit === 'star') {
+      playDone();
+      showToast({ header: 'A shooting star!', text: WISHES[Math.floor(Math.random() * WISHES.length)], icon: ICON_ADVANCEMENTS });
+    }
     if (hit === 'campfire') {
       showToast({
         header: fireState.lit ? 'The campfire is burning' : 'The campfire is waiting',

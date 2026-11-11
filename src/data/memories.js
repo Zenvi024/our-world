@@ -104,6 +104,22 @@ export async function fetchFavorites() {
   return data.map(tidy);
 }
 
+// A photo for today: one of your favorites if you have marked any, otherwise
+// any day with a photo. It is the same all day, and the same for both of you.
+// Returns { date, title, thumbPath }, or null if there are no photos yet.
+export async function photoOfTheDay(today) {
+  let memories = (await fetchFavorites()).filter((memory) => memory.photos.length);
+  if (!memories.length) {
+    const { data, error } = await supabase.from('memories').select(FIELDS).order('memory_date', { ascending: false }).limit(300);
+    if (error) throw error;
+    memories = data.map(tidy).filter((memory) => memory.photos.length);
+  }
+  if (!memories.length) return null;
+  const seed = [...today].reduce((sum, char) => (sum * 31 + char.charCodeAt(0)) >>> 0, 7);
+  const memory = memories[seed % memories.length];
+  return { date: memory.memory_date, title: memory.title, thumbPath: coverOf([memory]).thumb_path };
+}
+
 // Memories whose title, note, or caption contains the words, newest first.
 export async function searchMemories(words) {
   // Characters that would confuse the search filter are dropped.

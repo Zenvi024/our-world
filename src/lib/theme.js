@@ -36,3 +36,31 @@ export function installTheme() {
   }
   apply(on);
 }
+
+// The season of the Play screen's scene, also remembered on this device.
+const SEASON_KEY = 'our-world.season';
+export const SEASON_NAMES = { spring: 'Spring', summer: 'Summer', autumn: 'Autumn', winter: 'Winter' };
+
+export function getSeason() {
+  try {
+    const saved = localStorage.getItem(SEASON_KEY);
+    if (saved in SEASON_NAMES) return saved;
+  } catch {
+    // Spring it is.
+  }
+  return 'spring';
+}
+
+export function setSeason(season) {
+  try {
+    localStorage.setItem(SEASON_KEY, season);
+  } catch {
+    // Without storage the choice lasts until the page is closed.
+  }
+}
+
+// The season after this one, for a button that steps through them.
+export function nextSeason(season) {
+  const order = Object.keys(SEASON_NAMES);
+  return order[(order.indexOf(season) + 1) % order.length];
+}

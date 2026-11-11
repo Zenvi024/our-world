@@ -166,6 +166,12 @@ button.day-slot:focus-visible {
   pointer-events: none;
 }
 
+.day-lily--small,
+.day-slot--filled .day-lily--small {
+  width: 40%;
+  height: 40%;
+}
+
 .day-slot--anniversary.day-slot--filled .day-lily {
   width: 46%;
   height: 46%;

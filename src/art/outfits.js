@@ -171,9 +171,11 @@ export function hatRise(hatKey) {
 
 // Draws a capybara with its top-left corner (of the body, not the hat) at
 // (x, y). Options: body rows (to change the face), hat and accessory keys,
-// baby (the little sprite), and scale.
-export function drawCapybara(ctx, x, y, { body, hat, accessory, baby = false, scale = 1 } = {}) {
-  const rows = body ?? (baby ? BABY_BODY : CAPYBARA_BODY);
+// baby (the little sprite), asleep (closed eyes), and scale.
+export function drawCapybara(ctx, x, y, { body, hat, accessory, baby = false, asleep = false, scale = 1 } = {}) {
+  let rows = body ?? (baby ? BABY_BODY : CAPYBARA_BODY);
+  // Asleep: the eyes are closed.
+  if (asleep && !body) rows = rows.map((row, i) => (baby ? (i === 2 ? 'kkCSSSCkk' : row) : i === 4 ? '.kkCCSSSCCkk.' : row));
   drawRows(ctx, rows, x, y, scale, CAPYBARA_COLORS);
 
   const worn = ACCESSORIES[accessory];
