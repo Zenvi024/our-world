@@ -1,6 +1,6 @@
 import { h, friendlyError } from '../lib/dom.js';
 import { pixelArt } from '../art/pixel.js';
-import { ICON_QUILL, LILY } from '../art/sprites.js';
+import { ICON_LETTERS, LILY } from '../art/sprites.js';
 import { todayManila, isValidDate } from '../lib/dates.js';
 import { getUserId, loadMemberNames, loadProfile } from '../session.js';
 import { fetchLetters, sendLetter, markLetterRead, cancelLetter, fetchComments, addComment, removeComment } from '../data/letters.js';
@@ -53,6 +53,7 @@ function openLetter({ letter, names, hearts, onChange }) {
         createHeartButton('letter', letter.id, hearts.get(letter.id)),
         h('button', { class: 'btn btn--small', type: 'button', 'aria-label': 'Close', onclick: () => modal.close() }, '×'),
       ),
+      h('p', { class: 'page-label', 'aria-hidden': 'true' }, 'Page 1 of 1'),
       h('h2', { class: 'page-title' }, letter.title || 'A letter for you'),
       h('p', { class: 'page-date' }, letter.delivered ? dayText(letter.deliver_at) : `Written ${dayText(letter.created_at)}`),
       h('p', { class: 'page-body' }, letter.body),
@@ -223,7 +224,7 @@ function openCompose({ partnerName, myName, onSent }) {
           }
         },
       },
-      pixelArt(ICON_QUILL, 'page-quill'),
+      h('p', { class: 'page-label', 'aria-hidden': 'true' }, 'Page 1 of 1'),
       h('h2', { class: 'page-title' }, `A letter to ${partnerName}`),
       h('label', { class: 'visually-hidden', for: 'letter-title' }, 'Title'),
       title,
@@ -400,7 +401,7 @@ export function createLetters() {
             });
           },
         },
-        pixelArt(ICON_QUILL, 'btn-icon'),
+        pixelArt(ICON_LETTERS, 'btn-icon'),
         'Write a letter',
       ),
     ),

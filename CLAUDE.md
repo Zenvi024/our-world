@@ -399,13 +399,23 @@ These answer the open questions in section 12 and take priority over the working
 - **Music:** three original music-box pieces that take turns, and one speaker button (Play screen and every in-world header) that steps off, soft, medium, full. Settings has the same volume and a "Next tune" button.
 - These use `supabase/migration-3.sql` (moods, goal_hearts, letter_hearts, letter_comments), run after the first two.
 
+### Zen's corrections on the look (November 11, 2026) — these override the "cozy" round where they conflict
+- **Keep it looking like Minecraft.** The Play button, the calendar and chest, the hotbar, menus, and ordinary buttons are gray stone, like an inventory. The warm "cozy" materials are only for objects: the book, the quest board, and the photo frame.
+- **Names:** the calendar screen is called **Memory Chest**; goals are called **Quests** ("Our quests", "Add a quest", "Quest Complete!").
+- **Hotbar icons**, hand-drawn in the blocky item style after Zen's references: a gold clock (Memory Chest), a book and quill (Letters), a blank map (Quests), an emerald (Ledger). Zen offered Mojang's own icon images; rule 1 in section 6 still stands, so these are original drawings of the same objects.
+- **The book** (ledger and letters) follows Zen's book-and-quill reference: leather cover, plain cream pages with a spine, tan "Page 1 of 2" labels, pixel lettering. No handwriting font in the book.
+- **Health and hunger** sit just above the XP bar: hearts on the left, drumsticks on the right, a name in the middle. The display alternates between Zen and Jay every few seconds (tap the name to switch); each person sets only their own. At 2 or fewer of either, the other gets a pop-up. Hunger uses `supabase/migration-4.sql`.
+- **Desktop:** the calendar is larger. **Photo viewer:** the photo sits in a taped snapshot frame with its title and date.
+
+### Milestone 5 (ship) — done
+- Merged to `main`; the keep-alive workflow is `.github/workflows/keep-alive.yml` (needs the `SUPABASE_URL` and `SUPABASE_ANON_KEY` repository secrets); the gift QR code is `gift/our-little-world-qr.png` (remake with `npm run qr`).
+
 ### Advice given on a private chat (Zen asked; not built yet)
 Feasible as a later milestone: a messages table, live updates through Supabase Realtime, emoji from the normal keyboard, and photos through the existing photo pipeline. The catch is notifications: without them a message is only seen when the site is open. Push notifications on iPhone need the site added to the Home Screen, permission granted, and a small server function with its own keys. Messages would be private to the two accounts but not end-to-end encrypted. Recommended after the anniversary, starting without push.
 
 ### Still to do, in this order (Zen asked that none of these be forgotten)
-1. **Milestone 5: ship** (merge to `main`, keep-alive workflow, QR code, final checklist).
-2. **Private chat** (see the advice above), if Zen confirms.
-3. **"Happybara" virtual pet** (new hotbar slot, perhaps an egg icon): a Tamagotchi-style capybara the two care for together. It persists and keeps running: it has needs (food, water), and they can feed it, play with it, bathe it, and tap it for reactions. Caring for it earns points, which buy food, things for the capybara, and furniture for the house. Zen left the specifics to the builder. Needs its own tables (a third SQL file).
+1. **Private chat** (see the advice above), if Zen confirms.
+2. **"Happybara" virtual pet** (new hotbar slot, perhaps an egg icon): a Tamagotchi-style capybara the two care for together. It persists and keeps running: it has needs (food, water), and they can feed it, play with it, bathe it, and tap it for reactions. Caring for it earns points, which buy food, things for the capybara, and furniture for the house. Zen left the specifics to the builder. Needs its own tables (a third SQL file).
 4. **Seasons for the title screen:** a way to switch between spring (current), autumn, and winter versions of the scene.
 5. **Night mode:** a dark version of the scene, and a dark mode for the whole site that changes the palette and overall vibe.
 6. **Reminders for upcoming dates** beyond goals and the anniversary (ties into Batch 2 date invitations).

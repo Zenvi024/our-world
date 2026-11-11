@@ -1,19 +1,25 @@
 import { supabase } from '../supabase.js';
 import { getUserId } from '../session.js';
 
-// Mood hearts: how each of you is feeling, from 0 to 5 hearts.
-export const MAX_HEARTS = 5;
-export const LOW_HEARTS = 2; // at or below this, the other person is told
+// The two meters each of you sets for yourself, from 0 to 5: hearts (how you
+// are feeling) and hunger (how well fed you are).
+export const MAX_METER = 5;
+export const LOW_METER = 2; // at or below this, the other person is told
 
-// A Map of member id -> { hearts, updated_at }.
+// A Map of member id -> { hearts, hunger, updated_at }.
 export async function fetchMoods() {
-  const { data, error } = await supabase.from('moods').select('user_id, hearts, updated_at');
+  let { data, error } = await supabase.from('moods').select('user_id, hearts, hunger, updated_at');
+  if (error) {
+    // Before the hunger column exists, fall back to hearts alone.
+    ({ data, error } = await supabase.from('moods').select('user_id, hearts, updated_at'));
+  }
   if (error) throw error;
   return new Map(data.map((row) => [row.user_id, row]));
 }
 
-export async function setMood(hearts) {
-  const fields = { hearts, updated_at: new Date().toISOString() };
+// Sets one of my meters: field is 'hearts' or 'hunger'.
+export async function setMeter(field, value) {
+  const fields = { [field]: value, updated_at: new Date().toISOString() };
   const { data, error } = await supabase
     .from('moods')
     .update(fields)
@@ -21,7 +27,8 @@ export async function setMood(hearts) {
     .select('user_id');
   if (error) throw error;
   if (!data.length) {
-    const { error: insertError } = await supabase.from('moods').insert(fields);
+    // First time: hearts must have a value, so a full meter is assumed.
+    const { error: insertError } = await supabase.from('moods').insert({ hearts: MAX_METER, ...fields });
     if (insertError) throw insertError;
   }
 }

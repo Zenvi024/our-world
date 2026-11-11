@@ -8,29 +8,42 @@ import { fetchGoals } from '../data/goals.js';
 import { collectPokes, loadPartner } from '../data/pokes.js';
 import { showToast } from '../components/toast.js';
 import { playPoke } from './sound.js';
-import { ICON_HEART, ICON_FLAG, ICON_LETTERS, LILY } from '../art/sprites.js';
-import { fetchMoods, LOW_HEARTS, MAX_HEARTS } from '../data/moods.js';
+import { ICON_HEART, ICON_MAP, ICON_LETTERS, ICON_DRUMSTICK, LILY } from '../art/sprites.js';
+import { fetchMoods, LOW_METER, MAX_METER } from '../data/moods.js';
 import { fetchLetters } from '../data/letters.js';
 
 const MOOD_KEY = 'our-world.mood-seen';
 const LETTERS_KEY = 'our-world.letters-seen';
 
-// Tells you, once per change, when your partner's hearts are running low.
+// Tells you, once per change, when your partner's hearts or hunger run low.
 async function showPartnerMood() {
   try {
     const partner = await loadPartner();
     const mood = partner && (await fetchMoods()).get(partner.id);
-    if (!mood || mood.hearts > LOW_HEARTS) return;
+    if (!mood) return;
+    const lowHearts = mood.hearts != null && mood.hearts <= LOW_METER;
+    const lowHunger = mood.hunger != null && mood.hunger <= LOW_METER;
+    if (!lowHearts && !lowHunger) return;
     if (localStorage.getItem(MOOD_KEY) === mood.updated_at) return;
     localStorage.setItem(MOOD_KEY, mood.updated_at);
-    showToast({
-      header: `${partner.name} could use some love`,
-      text: `Feeling ${mood.hearts} of ${MAX_HEARTS} hearts right now.`,
-      icon: ICON_HEART,
-      sound: playPoke,
-    });
+    if (lowHearts) {
+      showToast({
+        header: `${partner.name} could use some love`,
+        text: `Feeling ${mood.hearts} of ${MAX_METER} hearts right now.`,
+        icon: ICON_HEART,
+        sound: playPoke,
+      });
+    }
+    if (lowHunger) {
+      showToast({
+        header: `${partner.name} is hungry`,
+        text: `Down to ${mood.hunger} of ${MAX_METER} on the hunger bar.`,
+        icon: ICON_DRUMSTICK,
+        sound: playPoke,
+      });
+    }
   } catch {
-    // Moods may not be set up yet.
+    // The meters may not be set up yet.
   }
 }
 
@@ -144,7 +157,7 @@ export async function showLandingNotices({ onOpenDay }) {
     const goal = (await fetchGoals()).find(
       (item) => !item.done_at && item.target_from && item.target_from <= soon && (!item.target_to || item.target_to >= today),
     );
-    if (goal) showToast({ header: 'A goal is in season', text: goal.title, icon: ICON_FLAG });
+    if (goal) showToast({ header: 'A quest is in season', text: goal.title, icon: ICON_MAP });
   } catch {
     // Goals may not be set up yet.
   }

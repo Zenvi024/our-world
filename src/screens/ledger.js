@@ -1,6 +1,6 @@
 import { h, friendlyError } from '../lib/dom.js';
 import { pixelArt } from '../art/pixel.js';
-import { ICON_COIN, ICON_QUILL, ICON_HEART } from '../art/sprites.js';
+import { ICON_EMERALD, ICON_HEART } from '../art/sprites.js';
 import { todayManila, isValidDate, parts, MONTH_NAMES } from '../lib/dates.js';
 import { getUserId } from '../session.js';
 import { loadPartner } from '../data/pokes.js';
@@ -17,7 +17,7 @@ export function createLedger() {
   let partner = { id: null, name: 'your partner' };
   let entries = [];
 
-  const noteText = h('p', { class: 'sticky-text' }, 'Counting the coins…');
+  const noteText = h('p', { class: 'sticky-text' }, 'Counting the emeralds…');
   const noteAmount = h('p', { class: 'sticky-amount' });
   const settleButton = h('button', { class: 'btn', type: 'button', hidden: true, onclick: openSettle }, 'Settle up');
   const summary = h('div', { class: 'page-summary' });
@@ -277,7 +277,7 @@ export function createLedger() {
     h(
       'aside',
       { class: 'desk-tools' },
-      h('div', { class: 'sticky-note' }, pixelArt(ICON_COIN, 'sticky-coin'), noteText, noteAmount),
+      h('div', { class: 'sticky-note' }, pixelArt(ICON_EMERALD, 'sticky-coin'), noteText, noteAmount),
       h('button', { class: 'btn btn--green', type: 'button', onclick: openExpense }, 'Add an expense'),
       settleButton,
       status,
@@ -285,16 +285,22 @@ export function createLedger() {
     h(
       'div',
       { class: 'book' },
-      pixelArt(ICON_QUILL, 'book-quill'),
       h(
         'section',
         { class: 'page page--left' },
+        h('p', { class: 'page-label', 'aria-hidden': 'true' }, 'Page 1 of 2'),
         h('h2', { class: 'page-title' }, 'Our Ledger'),
         h('p', { class: 'page-date' }, 'Kept with love, in pesos'),
         summary,
         pixelArt(ICON_HEART, 'page-doodle'),
       ),
-      h('section', { class: 'page page--right' }, h('h2', { class: 'page-title page-title--small' }, 'What we spent'), lines),
+      h(
+        'section',
+        { class: 'page page--right' },
+        h('p', { class: 'page-label', 'aria-hidden': 'true' }, 'Page 2 of 2'),
+        h('h2', { class: 'page-title page-title--small' }, 'What we spent'),
+        lines,
+      ),
     ),
   );
 

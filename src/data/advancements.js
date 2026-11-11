@@ -9,7 +9,7 @@ import {
   ICON_CALENDAR,
   ICON_ADVANCEMENTS,
   ICON_LETTERS,
-  ICON_FLAG,
+  ICON_MAP,
   LILY,
 } from '../art/sprites.js';
 
@@ -131,7 +131,7 @@ export async function checkAdvancements() {
     if (error) throw error;
     for (const goal of reached) {
       if (!unlocked.has(goalKey(goal.id)) && (await unlock(goalKey(goal.id)))) {
-        celebrate('Goal Reached!', goal.title, ICON_FLAG);
+        celebrate('Quest Complete!', goal.title, ICON_MAP);
       }
     }
   } catch {

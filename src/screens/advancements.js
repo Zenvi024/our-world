@@ -1,6 +1,6 @@
 import { h, friendlyError } from '../lib/dom.js';
 import { pixelArt } from '../art/pixel.js';
-import { ICON_FLAG } from '../art/sprites.js';
+import { ICON_MAP } from '../art/sprites.js';
 import { parts, toDate, isValidDate, MONTH_NAMES } from '../lib/dates.js';
 import { loadMemberNames } from '../session.js';
 import { ADVANCEMENTS, fetchUnlocks, checkAdvancements } from '../data/advancements.js';
@@ -33,7 +33,7 @@ function openGoalForm({ goal, onSaved, nextOrder }) {
   const save = h('button', { class: 'btn btn--green', type: 'submit' }, 'Save');
 
   const modal = openModal(
-    { label: goal ? 'Edit goal' : 'New goal', className: 'small-panel' },
+    { label: goal ? 'Edit quest' : 'New quest', className: 'small-panel' },
     h(
       'form',
       {
@@ -46,7 +46,7 @@ function openGoalForm({ goal, onSaved, nextOrder }) {
             target_to: isValidDate(to.value) ? to.value : null,
           };
           if (!fields.title) {
-            status.textContent = 'Please give the goal a name.';
+            status.textContent = 'Please give the quest a name.';
             return;
           }
           if (fields.target_from && fields.target_to && fields.target_from > fields.target_to) {
@@ -65,7 +65,7 @@ function openGoalForm({ goal, onSaved, nextOrder }) {
           }
         },
       },
-      h('h2', { class: 'panel-title' }, goal ? 'Edit goal' : 'New goal'),
+      h('h2', { class: 'panel-title' }, goal ? 'Edit quest' : 'New quest'),
       h('div', { class: 'field' }, h('label', { for: 'goal-title' }, 'What do we want to do?'), title),
       h('div', { class: 'field' }, h('label', { for: 'goal-note' }, 'Notes'), note),
       h('p', { class: 'hint' }, 'When would we like this to happen? Both dates are optional.'),
@@ -86,7 +86,7 @@ function openGoalForm({ goal, onSaved, nextOrder }) {
               class: 'btn btn--danger form-delete',
               type: 'button',
               onclick: async () => {
-                const sure = await confirmDialog({ message: `Remove “${goal.title}” from your goals?`, confirmLabel: 'Remove', danger: true });
+                const sure = await confirmDialog({ message: `Remove “${goal.title}” from your quests?`, confirmLabel: 'Remove', danger: true });
                 if (!sure) return;
                 try {
                   await removeGoal(goal.id);
@@ -107,7 +107,7 @@ function openGoalForm({ goal, onSaved, nextOrder }) {
   if (!goal) title.focus();
 }
 
-// The goals screen: the shared bucket list in the order you choose, the
+// The quests screen: the shared bucket list in the order you choose, the
 // goals already reached, and the built-in advancements.
 export function createAdvancements() {
   const goalList = h('div', { class: 'goal-list' });
@@ -212,8 +212,8 @@ export function createAdvancements() {
             h(
               'div',
               { class: 'goal-empty' },
-              pixelArt(ICON_FLAG, 'goal-empty-icon'),
-              h('p', null, 'No goals yet. What would you two love to do together?'),
+              pixelArt(ICON_MAP, 'goal-empty-icon'),
+              h('p', null, 'No quests yet. What would you two love to do together?'),
             ),
           ]),
     );
@@ -253,7 +253,7 @@ export function createAdvancements() {
     h(
       'section',
       { class: 'board' },
-      h('h2', { class: 'board-title' }, 'Our goals'),
+      h('h2', { class: 'board-title' }, 'Our quests'),
       h('p', { class: 'board-hint' }, 'The things we want to do together, in the order we want to do them.'),
       status,
       goalList,
@@ -268,7 +268,7 @@ export function createAdvancements() {
             onclick: () =>
               openGoalForm({ onSaved: load, nextOrder: goals.reduce((max, goal) => Math.max(max, goal.sort_order + 1), 0) }),
           },
-          'Add a goal',
+          'Add a quest',
         ),
       ),
     ),

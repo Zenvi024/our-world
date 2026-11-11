@@ -176,7 +176,7 @@ export function createCalendar() {
     { class: 'calendar' },
     h(
       'section',
-      { class: 'panel calendar-panel', 'aria-label': 'Calendar' },
+      { class: 'panel calendar-panel', 'aria-label': 'Memory Chest' },
       h(
         'div',
         { class: 'month-bar' },

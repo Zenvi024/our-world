@@ -19,6 +19,19 @@ export const PALETTE = {
   a: '#d6d6d6', // light gray
   m: '#8b8b8b', // mid gray
   M: '#555555', // dark gray
+  E: '#2ecf6e', // gem green
+  j: '#149a4b', // gem shade
+  J: '#0a6b33', // gem edge
+  L: '#c9fbd8', // gem shine
+  u: '#3d6fd6', // sky blue
+  Y: '#fff3a6', // pale gold
+  O: '#9a6412', // deep gold
+  t: '#e9dfae', // parchment
+  T: '#cfc28a', // parchment shade
+  q: '#8f8346', // parchment edge
+  x: '#8a4528', // leather
+  X: '#b0603a', // leather light
+  z: '#4a2314', // leather dark
 };
 
 function runs(rows, visit) {

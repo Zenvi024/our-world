@@ -189,7 +189,7 @@ export function mountTitle(root, { onEnter }) {
   const playButton = h(
     'button',
     {
-      class: 'btn btn--green play-button',
+      class: 'btn play-button',
       type: 'button',
       onclick: () => {
         if (!isConfigured) {

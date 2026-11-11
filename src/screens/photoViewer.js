@@ -1,4 +1,7 @@
 import { h, friendlyError } from '../lib/dom.js';
+import { longDate } from '../lib/dates.js';
+import { pixelArt } from '../art/pixel.js';
+import { LILY, ICON_HEART } from '../art/sprites.js';
 import { photosOf, coverOf, chooseCover } from '../data/memories.js';
 import { signedUrls, deletePhoto } from '../data/photos.js';
 import { openModal, confirmDialog } from '../components/modal.js';
@@ -13,6 +16,8 @@ export function openPhotoViewer({ memories, startId, onChange }) {
   let latestShow = 0;
 
   const image = h('img', { class: 'viewer-image', alt: '' });
+  const captionTitle = h('span', { class: 'frame-title' });
+  const captionDate = h('span', { class: 'frame-date' });
   const counter = h('p', { class: 'viewer-counter', 'aria-live': 'polite' });
   const status = h('p', { class: 'viewer-status', role: 'status' });
   const coverButton = h('button', { class: 'btn btn--small', type: 'button', onclick: makeCover });
@@ -35,7 +40,22 @@ export function openPhotoViewer({ memories, startId, onChange }) {
       counter,
       h('button', { class: 'btn btn--small', type: 'button', 'aria-label': 'Close', onclick: () => modal.close() }, '×'),
     ),
-    h('div', { class: 'viewer-stage' }, image, previous, next, status),
+    h(
+      'div',
+      { class: 'viewer-stage' },
+      h(
+        'figure',
+        { class: 'frame' },
+        h('span', { class: 'frame-tape', 'aria-hidden': 'true' }),
+        image,
+        h('figcaption', { class: 'frame-caption' }, captionTitle, captionDate),
+        pixelArt(LILY, 'frame-sticker'),
+        pixelArt(ICON_HEART, 'frame-heart'),
+      ),
+      previous,
+      next,
+      status,
+    ),
     h(
       'div',
       { class: 'viewer-bar' },
@@ -48,6 +68,9 @@ export function openPhotoViewer({ memories, startId, onChange }) {
     const load = ++latestShow;
     const photo = photos[index];
     counter.textContent = `${index + 1} of ${photos.length}`;
+    const memory = memories.find((item) => item.id === photo.memory_id);
+    captionTitle.textContent = memory?.title || 'A little memory';
+    captionDate.textContent = memory ? longDate(memory.memory_date) : '';
     previous.hidden = photos.length < 2;
     next.hidden = photos.length < 2;
     const isCover = coverOf(memories)?.id === photo.id;

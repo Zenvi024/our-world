@@ -3,17 +3,17 @@ import { pixelArt } from '../art/pixel.js';
 import {
   ICON_CALENDAR,
   ICON_LETTERS,
-  ICON_ADVANCEMENTS,
+  ICON_MAP,
   ICON_SETTINGS,
-  ICON_COIN,
+  ICON_EMERALD,
 } from '../art/sprites.js';
 
 // Nine slots, like a hotbar. Empty slots are saved for later features.
 const SLOTS = [
-  { route: 'calendar', label: 'Calendar', icon: ICON_CALENDAR },
+  { route: 'calendar', label: 'Memory Chest', icon: ICON_CALENDAR },
   { route: 'letters', label: 'Letters', icon: ICON_LETTERS },
-  { route: 'advancements', label: 'Goals', icon: ICON_ADVANCEMENTS },
-  { route: 'ledger', label: 'Ledger', icon: ICON_COIN },
+  { route: 'advancements', label: 'Quests', icon: ICON_MAP },
+  { route: 'ledger', label: 'Ledger', icon: ICON_EMERALD },
   null,
   null,
   null,
