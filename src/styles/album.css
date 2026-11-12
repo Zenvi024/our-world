@@ -1,0 +1,406 @@
+/* The anniversary album: a storybook that fills the screen, with a living
+   world behind it. On a phone the picture sits above the words; on a wide
+   screen they sit side by side, like an open book. */
+.album {
+  position: fixed;
+  inset: 0;
+  z-index: 15; /* under dialogs (20) and pop-ups (40), over everything else */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #101a3a;
+}
+
+.album-world-holder {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.album-world {
+  display: block;
+  image-rendering: pixelated;
+}
+
+.album-bar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: max(8px, env(safe-area-inset-top)) 8px 0;
+}
+
+.album-bar-gap {
+  flex: 1;
+}
+
+.album-tool {
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
+  font-size: 1.5rem;
+}
+
+.album-tool--wide {
+  width: auto;
+  padding: 0 10px;
+  font-size: 1.1875rem;
+}
+
+.album-tool .pixel-art {
+  width: 22px;
+  height: 22px;
+}
+
+.album-tool--off .pixel-art {
+  opacity: 0.4;
+}
+
+.album-counter {
+  padding: 2px 8px 3px;
+  font-family: var(--font-pixel);
+  font-size: 1.25rem;
+  line-height: 1;
+  color: #ffffff;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.album-stage {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  min-height: 0;
+  padding: 10px 6px 0;
+}
+
+.album-step {
+  display: none;
+}
+
+/* The book: a leather cover around cream pages. */
+.album-book {
+  width: min(100%, 372px);
+  padding: 6px;
+  background: #8b5a3c;
+  border: 3px solid #2e1c10;
+  box-shadow:
+    inset 3px 3px 0 #b07a54,
+    inset -3px -4px 0 #5f3a22,
+    0 8px 0 rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.album-spread {
+  display: flex;
+  flex-direction: column;
+}
+
+.album-page {
+  position: relative;
+  background: #fdf8e7;
+  box-shadow:
+    inset 0 0 0 2px #fdf8e7,
+    inset 0 0 0 4px #eadfbd;
+}
+
+.album-page--art {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 8px 22px;
+}
+
+/* A page number at the foot of each page. */
+.album-folio {
+  position: absolute;
+  bottom: 6px;
+  left: 0;
+  right: 0;
+  font-family: var(--font-pixel);
+  font-size: 1rem;
+  line-height: 1;
+  color: #c9b48a;
+  text-align: center;
+  pointer-events: none;
+}
+
+.album-art-holder {
+  position: relative;
+  box-sizing: content-box; /* the border sits outside the whole-number picture */
+  border: 2px solid #5f3a22;
+  line-height: 0;
+  box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.18);
+}
+
+.album-art,
+.album-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.album-art {
+  image-rendering: pixelated;
+}
+
+.album-photo {
+  position: absolute;
+  inset: 0;
+  object-fit: cover;
+  background: #fffdf7;
+}
+
+/* A photo develops like instant film: pale and soft, then clear. */
+.album-photo--developing {
+  animation: album-develop 2.2s ease-out both;
+}
+
+@keyframes album-develop {
+  from {
+    opacity: 0.25;
+    filter: brightness(2.2) contrast(0.4) sepia(0.9) blur(3px);
+  }
+  60% {
+    opacity: 1;
+    filter: brightness(1.3) contrast(0.8) sepia(0.4) blur(0.5px);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+  }
+}
+
+.album-photo-button {
+  margin-top: 6px;
+  padding: 2px 8px 3px;
+  font-family: var(--font-pixel);
+  font-size: 1.125rem;
+  line-height: 1;
+  color: #7a5a36;
+  background: none;
+  border: 0;
+  border-bottom: 2px dotted #c9a877;
+  cursor: pointer;
+}
+
+.album-hidden-tag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 1px 6px 2px;
+  font-family: var(--font-pixel);
+  font-size: 1.0625rem;
+  line-height: 1;
+  color: #ffffff;
+  background: var(--danger);
+}
+
+.album-spine {
+  height: 5px;
+  background: linear-gradient(#d9c9a0, #f3e9cb 45%, #d9c9a0);
+}
+
+.album-page--words {
+  display: flex;
+  flex-direction: column;
+  min-height: 14rem; /* tall enough to feel like a page, not a ticket */
+  padding: 14px 18px 22px;
+  color: #3a2a1c;
+}
+
+.album-date {
+  min-height: 1.1em;
+  margin-bottom: 4px;
+  font-family: var(--font-pixel);
+  font-size: 1.1875rem;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: #b08a52;
+  text-transform: uppercase;
+}
+
+.album-date:empty {
+  display: none;
+}
+
+.album-words {
+  flex: 1;
+  font-family: var(--font-hand);
+  font-size: 1.3125rem;
+  line-height: 1.28;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+/* The pen's tip while a sentence is being written. */
+.album-words--typing::after {
+  content: '';
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  background: #7a5a36;
+  vertical-align: -0.15em;
+}
+
+.album-hint {
+  min-height: 1em;
+  margin-top: 6px;
+  font-family: var(--font-pixel);
+  font-size: 1.0625rem;
+  line-height: 1;
+  color: #c9a877;
+  text-align: right;
+}
+
+/* Turning a page. */
+.album-spread--next {
+  animation: album-turn-next 0.34s ease-out both;
+}
+
+.album-spread--previous {
+  animation: album-turn-previous 0.34s ease-out both;
+}
+
+@keyframes album-turn-next {
+  from {
+    opacity: 0;
+    transform: perspective(900px) rotateY(-14deg) translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes album-turn-previous {
+  from {
+    opacity: 0;
+    transform: perspective(900px) rotateY(14deg) translateX(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.album-editor {
+  width: min(100%, 440px);
+}
+
+.album-editor textarea.input {
+  min-height: 150px;
+  resize: vertical;
+  font-family: var(--font-hand);
+  font-size: 1.1875rem;
+}
+
+.album-photo-row {
+  justify-content: flex-start;
+  margin-top: 0;
+}
+
+/* Wide screens: an open book, picture on the left and words on the right. */
+@media (min-width: 860px) and (min-height: 520px) {
+  .album-stage {
+    align-items: center;
+    padding-bottom: 8vh;
+  }
+
+  .album-step {
+    display: inline-flex;
+    width: 44px;
+    min-height: 64px;
+    padding: 0;
+    font-size: 2rem;
+  }
+
+  .album-book {
+    width: min(100%, 1090px);
+    padding: 10px;
+  }
+
+  /* Two tall pages, like a real open book. */
+  .album-page {
+    min-height: min(66vh, 600px);
+  }
+
+  .album-spread {
+    flex-direction: row;
+  }
+
+  /* Two equal pages either side of the spine. */
+  .album-page {
+    flex: 0 0 calc(50% - 4px);
+    min-width: 0;
+  }
+
+  .album-page--art {
+    justify-content: center;
+    padding: 16px 10px 30px;
+  }
+
+  .album-folio {
+    bottom: 10px;
+    font-size: 1.125rem;
+  }
+
+  .album-spine {
+    width: 8px;
+    height: auto;
+    background: linear-gradient(90deg, #d9c9a0, #f3e9cb 45%, #d9c9a0);
+  }
+
+  .album-page--words {
+    padding: 44px 40px 34px;
+  }
+
+  .album-words {
+    font-size: 1.625rem;
+  }
+
+  .album-date {
+    font-size: 1.375rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .album-spread--next,
+  .album-spread--previous,
+  .album-photo--developing {
+    animation: none;
+  }
+}
+
+/* The Play screen's album button, once the album exists. */
+.greet-button--album .soon-tag {
+  background: var(--grass-light);
+}
+
+.greet-button--new {
+  animation: album-glow 1.6s ease-in-out infinite;
+}
+
+@keyframes album-glow {
+  50% {
+    box-shadow:
+      inset var(--edge) var(--edge) 0 #b4b4b4,
+      inset calc(-1 * var(--edge)) calc(-1 * var(--edge)) 0 #565656,
+      0 0 0 4px rgba(255, 238, 85, 0.75);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .greet-button--new {
+    animation: none;
+  }
+}

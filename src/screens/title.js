@@ -5,7 +5,7 @@ import { AVATAR_HATS } from '../art/outfits.js';
 import { cachedSplash, fetchSplash } from '../data/splash.js';
 import { startLandscape } from '../art/landscape.js';
 import { pixelArt } from '../art/pixel.js';
-import { ICON_HEART, ICON_MOON, ICON_SUN, ICON_ALBUM, ICON_ADVANCEMENTS, ICON_SPRING, ICON_SUMMER, ICON_AUTUMN, ICON_WINTER, LILY } from '../art/sprites.js';
+import { ICON_HEART, ICON_MOON, ICON_SUN, ICON_ALBUM, ICON_ADVANCEMENTS, ICON_SPRING, ICON_SUMMER, ICON_AUTUMN, ICON_WINTER, ICON_CLEAR, ICON_RAIN, ICON_RAINBOW, LILY } from '../art/sprites.js';
 import { playPoke, playDone, playPop } from '../lib/sound.js';
 import { createMusicButton } from '../components/musicButton.js';
 import { openModal } from '../components/modal.js';
@@ -15,8 +15,10 @@ import { onLive, isPartnerOnline } from '../lib/live.js';
 import { getUserId } from '../session.js';
 import { loadPartner, sendPoke, POKES, POKE_MENU } from '../data/pokes.js';
 import { fetchMoods, setAsleep, isAsleep } from '../data/moods.js';
-import { isNight, setNight, getSeason, setSeason, nextSeason, SEASON_NAMES } from '../lib/theme.js';
+import { isNight, setNight, getSeason, setSeason, nextSeason, SEASON_NAMES, getWeather, setWeather, nextWeather, WEATHER_NAMES } from '../lib/theme.js';
 import { fetchLetters } from '../data/letters.js';
+import { fetchAlbumCover } from '../data/album.js';
+import { openAlbum, albumSeen } from './album.js';
 import { photoOfTheDay } from '../data/memories.js';
 import { signedUrls } from '../data/photos.js';
 import { todayManila, longDate } from '../lib/dates.js';
@@ -159,14 +161,30 @@ function createNotice(message, onClose) {
 function createGreetings(scene) {
   const sendLabel = h('span', null, 'Send…');
   const send = h('button', { class: 'btn greet-button', type: 'button' }, pixelArt(ICON_HEART), sendLabel);
-  // The anniversary album is still being made; its button waits here, dimmed.
+  // The anniversary album. Until it has been given, its button waits here,
+  // dimmed (except for its author, who can open it to keep writing).
+  const albumTag = h('span', { class: 'soon-tag' }, 'Soon');
   const album = h(
     'button',
     { class: 'btn greet-button greet-button--soon', type: 'button', 'aria-disabled': 'true', 'data-quiet': 'true', title: 'Coming soon' },
     pixelArt(ICON_ALBUM),
     h('span', null, 'Our album'),
-    h('span', { class: 'soon-tag' }, 'Soon'),
+    albumTag,
   );
+  let albumOpens = false;
+  async function showAlbumButton() {
+    const cover = await fetchAlbumCover().catch(() => null);
+    albumOpens = Boolean(cover && (cover.isAuthor || cover.published));
+    album.classList.toggle('greet-button--soon', !albumOpens);
+    album.classList.toggle('greet-button--album', albumOpens);
+    album.setAttribute('aria-disabled', String(!albumOpens));
+    album.title = albumOpens ? 'Our album' : 'Coming soon';
+    const fresh = albumOpens && !cover.isAuthor && !albumSeen();
+    album.classList.toggle('greet-button--new', fresh);
+    albumTag.textContent = !albumOpens ? 'Soon' : cover.isAuthor ? (cover.published ? 'Given' : 'Draft') : fresh ? 'New' : '';
+    albumTag.hidden = !albumTag.textContent;
+  }
+  showAlbumButton();
   const note = h('p', { class: 'greet-note', role: 'status' });
   const row = h('div', { class: 'greet', hidden: true }, h('div', { class: 'greet-row' }, send, album), note);
   let partner = null;
@@ -211,7 +229,18 @@ function createGreetings(scene) {
     }
   }
 
-  album.addEventListener('click', () => say('Our album is still being made. Soon!'));
+  album.addEventListener('click', async () => {
+    if (!albumOpens) {
+      say('Our album is still being made. Soon!');
+      return;
+    }
+    try {
+      await openAlbum();
+    } catch {
+      say('The album could not be opened. Please try again.');
+    }
+    showAlbumButton();
+  });
 
   send.addEventListener('click', () => {
     const modal = openModal(
@@ -255,7 +284,15 @@ function createGreetings(scene) {
       row.hidden = !partner;
     });
 
-  return { el: row, stop: onLive('moods', refresh) };
+  const stopMoods = onLive('moods', refresh);
+  const stopAlbum = onLive('album', showAlbumButton);
+  return {
+    el: row,
+    stop: () => {
+      stopMoods();
+      stopAlbum();
+    },
+  };
 }
 
 // A square sun-or-moon button under the speaker: the sky turns to night
@@ -302,6 +339,27 @@ function createSeasonButton(onSwitch) {
     setSeason(season);
     show();
     onSwitch(season);
+  });
+  show();
+  return button;
+}
+
+// A square button under the season button that steps through the weather.
+function createWeatherButton(onSwitch) {
+  const icons = { clear: ICON_CLEAR, rain: ICON_RAIN, rainbow: ICON_RAINBOW };
+  const button = h('button', { class: 'btn night-button weather-button', type: 'button' });
+  const show = () => {
+    const weather = getWeather();
+    button.replaceChildren(pixelArt(icons[weather]));
+    button.dataset.weather = weather;
+    button.setAttribute('aria-label', `Weather: ${WEATHER_NAMES[weather]}. Tap for ${WEATHER_NAMES[nextWeather(weather)].toLowerCase()}.`);
+    button.title = WEATHER_NAMES[weather];
+  };
+  button.addEventListener('click', () => {
+    const weather = nextWeather(getWeather());
+    setWeather(weather);
+    show();
+    onSwitch(weather);
   });
   show();
   return button;
@@ -379,6 +437,7 @@ export function mountTitle(root, { onEnter, onOpenDay }) {
     music.el,
     createNightButton(() => scene.refresh()),
     createSeasonButton((season) => scene.setSeason(season)),
+    createWeatherButton((weather) => scene.setWeather(weather)),
   );
 
   root.replaceChildren(screen);
@@ -387,6 +446,7 @@ export function mountTitle(root, { onEnter, onOpenDay }) {
   canvas.after(tags);
   const scene = startLandscape(canvas, {
     season: getSeason(),
+    weather: getWeather(),
     onMove(spots) {
       spots.forEach((spot, i) => {
         const tag = tags.children[i];

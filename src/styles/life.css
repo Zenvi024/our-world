@@ -142,6 +142,11 @@
   top: calc(max(10px, env(safe-area-inset-top)) + 104px);
 }
 
+/* And the weather button under that. */
+.weather-button {
+  top: calc(max(10px, env(safe-area-inset-top)) + 156px);
+}
+
 /* Photo of the day: a small snapshot taped to the corner of the sky. On a
    phone it stays small enough to clear the title. */
 .daily-photo {
