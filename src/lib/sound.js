@@ -333,6 +333,36 @@ const LANTERN = {
   ],
 };
 
+// "Same Page": the storybook's own piece. Slow and tender, in G.
+const spG = [55, 59, 62, 67];
+const spD = [54, 57, 62, 66];
+const spEm = [55, 59, 64, 67];
+const spC = [55, 60, 64, 67];
+const spBm = [54, 59, 62, 66];
+const SAME_PAGE = {
+  step: 0.42,
+  beats: 8,
+  roll: [0, 1, 2, 3, 2, 1, 2, 1],
+  bars: [
+    [43, spG, [[0, 79, 2], [2, 83, 2], [4, 86, 4]]],
+    [42, spD, [[0, 81, 3], [3, 78, 1], [4, 74, 4]]],
+    [40, spEm, [[0, 76, 2], [2, 79, 2], [4, 83, 4]]],
+    [48, spC, [[0, 79, 3], [3, 76, 1], [4, 72, 4]]],
+    [43, spG, [[0, 74, 2], [2, 79, 2], [4, 83, 2], [6, 79, 2]]],
+    [47, spBm, [[0, 78, 4], [4, 74, 4]]],
+    [48, spC, [[0, 76, 2], [2, 79, 2], [4, 84, 4]]],
+    [50, spD, [[0, 81, 2], [2, 78, 2], [4, 74, 4]]],
+    [40, spEm, [[0, 83, 3], [3, 79, 1], [4, 76, 4]]],
+    [48, spC, [[0, 79, 2], [2, 76, 2], [4, 72, 2], [6, 76, 2]]],
+    [43, spG, [[0, 74, 4], [4, 79, 4]]],
+    [50, spD, [[0, 78, 2], [2, 81, 2], [4, 86, 4]]],
+    [48, spC, [[0, 84, 2], [2, 83, 2], [4, 79, 4]]],
+    [50, spD, [[0, 81, 2], [2, 78, 2], [4, 74, 2], [6, 78, 2]]],
+    [43, spG, [[0, 79, 8]]],
+    [43, spG, [[0, 74, 2], [2, 71, 2], [4, 67, 4]]],
+  ],
+};
+
 const TRACKS = [MEADOW, PETALS, LANTERN];
 const LEVEL_GAIN = [0.0001, 0.3, 0.6, 1];
 const REST_SECONDS = 2.5; // a breath between pieces
@@ -341,6 +371,9 @@ let trackIndex = Math.floor(Math.random() * TRACKS.length);
 let step = 0;
 let nextStepAt = 0;
 let scheduler = null;
+let albumOn = false; // while the storybook is open, its own piece plays instead
+let albumMuted = false;
+const ALBUM_GAIN = 0.6;
 
 function scheduleStep(track, index, when) {
   const [bass, chord, tune] = track.bars[Math.floor(index / track.beats)];
@@ -357,14 +390,15 @@ function scheduleStep(track, index, when) {
 function pump() {
   // Queue up everything due in the next moment (timers can be late; audio cannot).
   while (nextStepAt < context.currentTime + 0.9) {
-    const track = TRACKS[trackIndex];
+    const track = albumOn ? SAME_PAGE : TRACKS[trackIndex];
     scheduleStep(track, step, nextStepAt);
     step += 1;
     nextStepAt += track.step;
     if (step >= track.bars.length * track.beats) {
-      // The piece is over: rest, then play the next one.
+      // The piece is over: rest, then play the next one (the storybook's
+      // piece simply comes round again).
       step = 0;
-      trackIndex = (trackIndex + 1) % TRACKS.length;
+      if (!albumOn) trackIndex = (trackIndex + 1) % TRACKS.length;
       nextStepAt += REST_SECONDS;
     }
   }
@@ -394,6 +428,37 @@ function stopMusic() {
   fadeTo(0.0001, 0.3);
 }
 
+// The storybook plays its own piece, even if the everyday music is off.
+// It must be started inside a tap or click.
+export function startAlbumMusic() {
+  const ctx = audio();
+  if (!ctx) return;
+  albumOn = true;
+  step = 0;
+  nextStepAt = ctx.currentTime + 0.5;
+  fadeTo(albumMuted ? 0.0001 : Math.max(ALBUM_GAIN, LEVEL_GAIN[musicLevel]), 1.2);
+  if (!scheduler) {
+    pump();
+    scheduler = setInterval(pump, 250);
+  }
+}
+
+export function stopAlbumMusic() {
+  if (!albumOn) return;
+  albumOn = false;
+  step = 0;
+  if (musicLevel > 0 && context) {
+    nextStepAt = context.currentTime + 1;
+    fadeTo(LEVEL_GAIN[musicLevel], 0.8);
+  } else stopMusic();
+}
+
+export const isAlbumMuted = () => albumMuted;
+export function setAlbumMuted(muted) {
+  albumMuted = muted;
+  if (albumOn && context) fadeTo(muted ? 0.0001 : Math.max(ALBUM_GAIN, LEVEL_GAIN[musicLevel]), 0.4);
+}
+
 export const getMusicLevel = () => musicLevel;
 export const isMusicOn = () => musicLevel > 0;
 
@@ -406,7 +471,9 @@ export function setMusicLevel(level) {
   } catch {
     // The choice just lasts for this visit.
   }
-  if (level > 0) startMusic();
+  if (albumOn) {
+    // The storybook keeps playing its piece; the new level applies afterward.
+  } else if (level > 0) startMusic();
   else stopMusic();
   musicListeners.forEach((listener) => listener(level));
 }
@@ -436,6 +503,7 @@ export function installMusic() {
   document.addEventListener('visibilitychange', () => {
     if (!context) return;
     if (document.hidden) stopMusic();
+    else if (albumOn) startAlbumMusic();
     else if (musicLevel > 0) startMusic();
   });
 }

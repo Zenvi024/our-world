@@ -665,6 +665,30 @@ function drawShootingStar(ctx, width, horizon, seconds) {
   return true;
 }
 
+// Fireworks over the hills, for the end of the storybook.
+function drawFireworks(ctx, width, horizon, tick) {
+  const colors = ['#ff8fb8', '#ffd83d', '#7dd3fc', '#b197fc', '#8ce99a', '#ffa94d'];
+  for (let i = 0; i < 5; i += 1) {
+    const lap = 34;
+    const t = (tick + i * 9) % lap;
+    const round = Math.floor((tick + i * 9) / lap);
+    const x = width * (0.08 + noise(round, i, 120) * 0.84);
+    const y = horizon * (0.08 + noise(round, i, 121) * 0.45);
+    if (t < 7) {
+      rect(ctx, '#fff6dc', Math.round(x), Math.round(horizon * 0.8 - ((horizon * 0.8 - y) * t) / 7), 1, 3);
+      continue;
+    }
+    const age = (t - 7) / (lap - 7);
+    ctx.globalAlpha = Math.max(0, 1 - age * age);
+    for (let p = 0; p < 16; p += 1) {
+      const angle = (p / 16) * Math.PI * 2;
+      const reach = age * (12 + (p % 3) * 4);
+      rect(ctx, p % 4 === 0 ? '#ffffff' : colors[(round + i) % colors.length], Math.round(x + Math.cos(angle) * reach), Math.round(y + Math.sin(angle) * reach + age * age * 6), 1, 1);
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
 // The mailbox stands on a post. When a letter waits, its yellow flag goes
 // up and a white envelope peeks out.
 function drawMailbox(ctx, x, groundY, flagUp) {
@@ -791,8 +815,10 @@ function drawCapybaras(ctx, herd, levels, seconds) {
 }
 
 // Draws the scene into the canvas and keeps it gently alive.
-// Options: `season` to start in, and `onMove`, which is told where each
-// capybara's head is (in CSS pixels) so name tags can follow them.
+// Options: `season` to start in; `phase` ('dawn', 'day', 'dusk', 'night') and
+// `weather` to hold the sky still instead of following the clock (the
+// storybook does this); and `onMove`, which is told where each capybara's
+// head is (in CSS pixels) so name tags can follow them.
 // Returns controls:
 //   stop(), refresh()
 //   tap(clientX, clientY) -> 'capybara' | 'campfire' | 'mailbox' | 'star' | null
@@ -801,7 +827,7 @@ function drawCapybaras(ctx, herd, levels, seconds) {
 //   setPeople({ asleep: [first, second], together })
 //   setMail(waiting)        raises the mailbox flag
 //   setSeason(season)
-export function startLandscape(canvas, { onMove, season: startSeason = 'spring' } = {}) {
+export function startLandscape(canvas, { onMove, season: startSeason = 'spring', phase: startPhase = null, weather: fixedWeather = null } = {}) {
   const ctx = canvas.getContext('2d');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let sky;
@@ -817,10 +843,12 @@ export function startLandscape(canvas, { onMove, season: startSeason = 'spring' 
   let people = { asleep: [false, false], together: false };
   let mail = false;
   let season = SEASONS.includes(startSeason) ? startSeason : 'spring';
-  let weather = weatherNow();
+  let forcedPhase = startPhase;
+  let fireworks = false;
+  let weather = fixedWeather ?? weatherNow();
   let horizon = 0;
   let scale = 3;
-  let phase = skyPhase();
+  let phase = forcedPhase ?? skyPhase();
   let tick = 0;
   let timer = null;
   let starSeenAt = -Infinity; // when a shooting star last crossed (ms)
@@ -847,6 +875,7 @@ export function startLandscape(canvas, { onMove, season: startSeason = 'spring' 
     ctx.drawImage(sky, 0, 0);
     if (phase === 'night' && !wet && !reduceMotion && drawShootingStar(ctx, canvas.width, horizon, seconds)) starSeenAt = Date.now();
     drawClouds(ctx, canvas.width, horizon, seconds, phase);
+    if (fireworks) drawFireworks(ctx, canvas.width, horizon, tick);
     if (!dark && !wet) drawBirds(ctx, canvas.width, horizon, seconds);
     ctx.drawImage(front, 0, 0);
     drawSmoke(ctx, chimney, seconds);
@@ -902,8 +931,8 @@ export function startLandscape(canvas, { onMove, season: startSeason = 'spring' 
     let frontCtx;
     [sky, skyCtx] = makeLayer(width, height);
     [front, frontCtx] = makeLayer(width, height);
-    phase = skyPhase();
-    weather = weatherNow();
+    phase = forcedPhase ?? skyPhase();
+    weather = fixedWeather ?? weatherNow();
     drawSky(skyCtx, width, height, horizon, wide, phase);
     if (weather === 'rainbow' && phase !== 'night') drawRainbow(skyCtx, width, horizon);
     drawMountains(frontCtx, width, horizon);
@@ -962,7 +991,7 @@ export function startLandscape(canvas, { onMove, season: startSeason = 'spring' 
   if (!reduceMotion) timer = setInterval(step, TICK_MS);
   // The sky changes with the hour, and the weather every few hours.
   const clock = setInterval(() => {
-    if (skyPhase() !== phase || weatherNow() !== weather) build();
+    if ((forcedPhase ?? skyPhase()) !== phase || (fixedWeather ?? weatherNow()) !== weather) build();
   }, 60_000);
 
   return {
@@ -1031,6 +1060,15 @@ export function startLandscape(canvas, { onMove, season: startSeason = 'spring' 
     setSeason(next) {
       if (!SEASONS.includes(next) || next === season) return;
       season = next;
+      build();
+    },
+    // The storybook's sky: a fixed time of day and season for each page, and
+    // fireworks for the last ones.
+    setLook({ phase: nextPhase = forcedPhase, season: nextSeason = season, fireworks: show = false }) {
+      fireworks = show;
+      if (nextPhase === forcedPhase && nextSeason === season) return;
+      forcedPhase = nextPhase;
+      if (SEASONS.includes(nextSeason)) season = nextSeason;
       build();
     },
     // Redraws the whole scene (for example, when night mode is switched).
