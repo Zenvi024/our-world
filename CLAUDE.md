@@ -465,7 +465,7 @@ No database file is needed for this round.
 - **Photo of the day:** a small taped snapshot in the top-left corner of the Play screen: one favorite memory a day (any memory with a photo if there are no favorites), the same for both people. Tapping it opens that day.
 - **Monthsary marks:** every 13th from December 2024 on has a small lily in its Memory Chest slot, and the Play screen says "Monthsary 25!" on the day. November 13 keeps its anniversary frame instead.
 
-### The anniversary album (November 12, 2026) — on the preview branch, not yet merged
+### The anniversary album (November 12, 2026) — merged
 Zen's design, from a voice note: a Minecraft-style storybook, from him to Jay, of their years together. Needs `supabase/migration-9.sql` (after 8).
 - **What it is:** a full-screen beige storybook opened from the "Our album" button on the Play screen. Each spread has an animated pixel picture of the two of them on one page and Zen's words on the other (picture above words on a phone; side by side on a wide screen). The words write themselves; a tap finishes the sentence, and the next tap turns the page. About 3 to 5 minutes, at Jay's own pace, replayable.
 - **What he wants Jay to feel:** calm, at peace, loved, and appreciated; mostly tender and romantic, a little whimsical at the embarrassing moments. Only Zen speaks in it. The running thread is "not always on the same page, but always in the same story," and it ends on blank pages: the next chapters are theirs to write.
