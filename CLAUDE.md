@@ -465,6 +465,17 @@ No database file is needed for this round.
 - **Photo of the day:** a small taped snapshot in the top-left corner of the Play screen: one favorite memory a day (any memory with a photo if there are no favorites), the same for both people. Tapping it opens that day.
 - **Monthsary marks:** every 13th from December 2024 on has a small lily in its Memory Chest slot, and the Play screen says "Monthsary 25!" on the day. November 13 keeps its anniversary frame instead.
 
+### The anniversary album (November 12, 2026) — on the preview branch, not yet merged
+Zen's design, from a voice note: a Minecraft-style storybook, from him to Jay, of their years together. Needs `supabase/migration-9.sql` (after 8).
+- **What it is:** a full-screen beige storybook opened from the "Our album" button on the Play screen. Each spread has an animated pixel picture of the two of them on one page and Zen's words on the other (picture above words on a phone; side by side on a wide screen). The words write themselves; a tap finishes the sentence, and the next tap turns the page. About 3 to 5 minutes, at Jay's own pace, replayable.
+- **What he wants Jay to feel:** calm, at peace, loved, and appreciated; mostly tender and romantic, a little whimsical at the embarrassing moments. Only Zen speaks in it. The running thread is "not always on the same page, but always in the same story," and it ends on blank pages: the next chapters are theirs to write.
+- **Pages** (17, keyed by `scene`): cover, classroom, strength, pride, study, bouquet, samepage, ferriswheel, home, grab, storm, graduation, lawschool, dinner, baguio, fireworks, blank. The pictures are drawn in `src/art/story.js`; the two characters are in `src/art/people.js` ('a' is Zen: shorter, round face, round silver glasses, a mole under one eye; 'b' is Jay: taller, swept-up hair, dark glasses).
+- **The world behind the book** changes with each page (time of day and season, `PAGE_WORLDS` in `src/data/album.js`), Dook and Boop walk along the bottom, and fireworks fill the sky at the end.
+- **Music:** its own original piece, "Same Page" (`src/lib/sound.js`), which plays while the album is open even if the everyday music is off; a speaker button in the album mutes it.
+- **Zen's editing:** only the album's author (Zen) sees "Edit page" (the date line, the words, leaving a page out, and tucking a real photo behind the picture, which Jay can reveal and which develops like instant film) and "Give it" / "Take it back." Until it is given, Jay's button stays "Soon" and the database returns him no pages at all.
+- **Privacy:** the words live only in the database. Nothing of the story's text may go into the site's code, because the built site's files can be downloaded without signing in. Draft words were handed to Zen as a separate SQL file outside the repo.
+- **Still open:** whether the album should open by itself the first time Jay enters (now the button glows and says "New"); the music has not been heard by anyone yet.
+
 ### Advice given on a private chat (Zen asked; not built yet)
 Feasible as a later milestone: a messages table, live updates through Supabase Realtime, emoji from the normal keyboard, and photos through the existing photo pipeline. The catch is notifications: without them a message is only seen when the site is open. Push notifications on iPhone need the site added to the Home Screen, permission granted, and a small server function with its own keys. Messages would be private to the two accounts but not end-to-end encrypted. Recommended after the anniversary, starting without push.
 
@@ -472,5 +483,4 @@ Feasible as a later milestone: a messages table, live updates through Supabase R
 1. **Private chat** (see the advice above), if Zen confirms.
 2. **Reminders for upcoming dates** beyond goals and the anniversary (ties into Batch 2 date invitations).
 3. Batch 2 as written in section 5: Anniversary mode, crafting table date generator, date invitations.
-4. **The anniversary album** (the first-entry book: an album of their memories through the years, opened from the dimmed "Our album" button on the Play screen). Zen will design it with Claude.
-5. Merging the layered style sheets into one.
+4. Merging the layered style sheets into one.
