@@ -417,45 +417,67 @@ SCENES.strength = (ctx, f) => {
   }
 };
 
-// ---------- The march, the flag, and the first photo together ----------
+// ---------- The first photo together: night, the lawn, the white church ----------
 SCENES.pride = (ctx, f) => {
-  bands(ctx, ['#1a1440', '#231a55', '#2f2168', '#3d2a78', '#4d3486', '#5e3f8f']);
-  stars(ctx, 30, 50, f, 61);
-  const rainbow = ['#e2574c', '#f28c1e', '#ffd83d', '#6cc24a', '#5aa9e6', '#b197fc'];
-  // Pennants overhead.
-  for (let x = 0; x < SCENE_W; x += 10) {
-    const dip = Math.round(Math.sin((x / SCENE_W) * Math.PI) * 6);
-    rect(ctx, '#d9d2f0', x, 8 + dip, 10, 1);
-    for (let i = 0; i < 5; i += 1) rect(ctx, rainbow[(x / 10) % 6], x + 2 + Math.floor(i / 2), 9 + dip + i, 6 - i, 1);
+  bands(ctx, ['#05070f', '#080b18', '#0b1020', '#0e1428', '#111830', '#141c38']);
+  stars(ctx, 26, 40, f, 61);
+  // The church: a white pyramid with a cross on top.
+  const apexX = 80;
+  for (let row = 0; row < 50; row += 1) {
+    const half = Math.round(row * 0.92);
+    rect(ctx, '#e9edf2', apexX - half, 24 + row, half, 1);
+    rect(ctx, '#c9d1dc', apexX, 24 + row, half, 1);
   }
-  // A cheering crowd behind, with little flags.
-  for (let i = 0; i < 14; i += 1) {
-    const x = i * 12 + 2;
-    const hop = (Math.floor(f / 4) + i) % 3 === 0 ? 2 : 0;
-    rect(ctx, '#241a4a', x, 84 - hop, 9, 30);
-    rect(ctx, '#2d2158', x + 1, 76 - hop, 7, 8);
-    if (i % 3 === 0) {
-      rect(ctx, '#d9d2f0', x + 9, 64 - hop, 1, 14);
-      for (let s = 0; s < 6; s += 1) rect(ctx, rainbow[s], x + 10, 64 - hop + s, 6, 1);
-    }
+  for (let row = 8; row < 50; row += 8) rect(ctx, '#b9c2cf', apexX - Math.round(row * 0.92), 24 + row, Math.round(row * 0.92) * 2, 1);
+  rect(ctx, '#f6f8fb', apexX - 1, 8, 2, 16);
+  rect(ctx, '#f6f8fb', apexX - 5, 13, 10, 2);
+  rect(ctx, '#8a93a3', apexX - 6, 62, 12, 12);
+  rect(ctx, '#ffe9a3', apexX - 4, 64, 8, 10);
+  // Trees along the edge of the grounds, with lamps among them.
+  for (let x = 0; x < SCENE_W; x += 1) {
+    if (Math.abs(x - apexX) < 40) continue;
+    const top = 58 - Math.round(Math.abs(Math.sin(x / 9)) * 8 + Math.sin(x / 4) * 2);
+    rect(ctx, '#0a1410', x, top, 1, 74 - top);
   }
-  rect(ctx, '#3a2f5c', 0, 108, SCENE_W, 12);
-  // The two of them, and the flag he carried.
-  const a = drawPerson(ctx, 'a', 62, 112, { pose: 'up', mouth: 'laugh', eyes: 'happy', shirt: '#f4f4f4', pants: '#2b2f3a', frame: f, blush: true });
-  drawPerson(ctx, 'b', 96, 112, { pose: 'reach-left', mouth: 'smile', eyes: 'happy', shirt: '#2f3e63', pants: '#b9a37c', frame: f, blush: true });
-  const poleX = a.torsoX - 3;
-  rect(ctx, '#e9e4d4', poleX, 18, 2, a.torsoTop - 28);
+  for (const [lx, ly] of [[12, 66], [34, 68], [128, 67], [150, 65]]) {
+    rect(ctx, 'rgba(255, 233, 163, 0.25)', lx - 2, ly - 2, 5, 5);
+    rect(ctx, '#ffe9a3', lx, ly, 1, 1);
+  }
+  // The lawn, and people far off across it.
+  rect(ctx, '#0f2a1c', 0, 74, SCENE_W, 46);
+  rect(ctx, '#143524', 0, 74, SCENE_W, 2);
+  for (let i = 0; i < 40; i += 1) rect(ctx, '#17402b', Math.floor(noise(i, 1, 63) * SCENE_W), 78 + Math.floor(noise(i, 2, 63) * 40), 2, 1);
+  for (const [px, tall] of [[8, 10], [16, 9], [26, 11], [132, 10], [141, 12], [151, 9]]) {
+    rect(ctx, '#0a1410', px, 80 - tall, 4, tall);
+    rect(ctx, '#0a1410', px + 1, 77 - tall, 2, 3);
+  }
+
+  // The flag, worn over the shoulders like a cape.
+  const cape = ['#7c4dbd', '#3d6fd6', '#4fa63a', '#ffd83d', '#f28c1e', '#e2574c'];
+  const sway = Math.round(Math.sin(f / 9));
   for (let x = 0; x < 34; x += 1) {
-    const wave = Math.round(Math.sin(x / 5 + f / 3) * 2);
-    rainbow.forEach((color, s) => rect(ctx, color, poleX - 34 + x, 20 + s * 3 + wave, 1, 3));
+    const drop = Math.round(Math.sin(x / 6 + f / 10)) + (x < 4 || x > 29 ? 2 : 0);
+    cape.forEach((color, i) => rect(ctx, color, 84 + x + (i > 2 ? sway : 0), 87 + drop + i * 4, 1, 4));
   }
-  // Confetti, and the flash of the camera.
-  for (let i = 0; i < 18; i += 1) {
-    const y = (noise(i, 2, 62) * SCENE_H + f * (0.8 + noise(i, 1, 62))) % SCENE_H;
-    rect(ctx, rainbow[i % 6], (noise(i, 3, 62) * SCENE_W + Math.sin(f / 6 + i) * 4) % SCENE_W, y, 2, 1);
+  rect(ctx, '#f4f4f4', 117, 88, 1, 24);
+
+  // Him, alone until I walked over; and me, asking for a photo.
+  const b = drawPerson(ctx, 'b', 58, 114, { pose: 'hold', eyes: 'happy', mask: true, shirt: '#b88a3e', pants: '#3f5a8a', lanyard: '#1f2a44', frame: f });
+  // Two peace signs, held up in front of him.
+  for (const hx of [b.torsoX + 1, b.torsoX + 11]) {
+    rect(ctx, '#e6b086', hx, b.handY - 3, 4, 4);
+    rect(ctx, '#e6b086', hx, b.handY - 7, 1, 4);
+    rect(ctx, '#e6b086', hx + 3, b.handY - 7, 1, 4);
   }
-  const flash = f % 60;
+  const a = drawPerson(ctx, 'a', 101, 114, { pose: 'wave', eyes: 'happy', mask: true, shirt: '#d63a3a', pants: '#d9cfae', frame: f });
+  // His shirt: red with white leaves.
+  for (let y = 0; y < 15; y += 1) {
+    for (let x = 0; x < 17; x += 1) if (noise(x, y, 64) < 0.3) rect(ctx, '#f6e9e6', a.torsoX + x, a.torsoTop + y, 1, 1);
+  }
+  // The flash of the camera.
+  const flash = f % 70;
   if (flash < 3) rect(ctx, `rgba(255, 255, 255, ${0.75 - flash * 0.25})`, 0, 0, SCENE_W, SCENE_H);
+  risingHearts(ctx, 74, 60, f, 1);
 };
 
 // ---------- Best friends: study nights ----------

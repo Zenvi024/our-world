@@ -5,7 +5,7 @@ import { AVATAR_HATS } from '../art/outfits.js';
 import { cachedSplash, fetchSplash } from '../data/splash.js';
 import { startLandscape } from '../art/landscape.js';
 import { pixelArt } from '../art/pixel.js';
-import { ICON_HEART, ICON_MOON, ICON_SUN, ICON_ALBUM, ICON_ADVANCEMENTS, ICON_SPRING, ICON_SUMMER, ICON_AUTUMN, ICON_WINTER, LILY } from '../art/sprites.js';
+import { ICON_HEART, ICON_MOON, ICON_SUN, ICON_ALBUM, ICON_ADVANCEMENTS, ICON_SPRING, ICON_SUMMER, ICON_AUTUMN, ICON_WINTER, ICON_CLEAR, ICON_RAIN, ICON_RAINBOW, LILY } from '../art/sprites.js';
 import { playPoke, playDone, playPop } from '../lib/sound.js';
 import { createMusicButton } from '../components/musicButton.js';
 import { openModal } from '../components/modal.js';
@@ -15,7 +15,7 @@ import { onLive, isPartnerOnline } from '../lib/live.js';
 import { getUserId } from '../session.js';
 import { loadPartner, sendPoke, POKES, POKE_MENU } from '../data/pokes.js';
 import { fetchMoods, setAsleep, isAsleep } from '../data/moods.js';
-import { isNight, setNight, getSeason, setSeason, nextSeason, SEASON_NAMES } from '../lib/theme.js';
+import { isNight, setNight, getSeason, setSeason, nextSeason, SEASON_NAMES, getWeather, setWeather, nextWeather, WEATHER_NAMES } from '../lib/theme.js';
 import { fetchLetters } from '../data/letters.js';
 import { fetchAlbumCover } from '../data/album.js';
 import { openAlbum, albumSeen } from './album.js';
@@ -344,6 +344,27 @@ function createSeasonButton(onSwitch) {
   return button;
 }
 
+// A square button under the season button that steps through the weather.
+function createWeatherButton(onSwitch) {
+  const icons = { clear: ICON_CLEAR, rain: ICON_RAIN, rainbow: ICON_RAINBOW };
+  const button = h('button', { class: 'btn night-button weather-button', type: 'button' });
+  const show = () => {
+    const weather = getWeather();
+    button.replaceChildren(pixelArt(icons[weather]));
+    button.dataset.weather = weather;
+    button.setAttribute('aria-label', `Weather: ${WEATHER_NAMES[weather]}. Tap for ${WEATHER_NAMES[nextWeather(weather)].toLowerCase()}.`);
+    button.title = WEATHER_NAMES[weather];
+  };
+  button.addEventListener('click', () => {
+    const weather = nextWeather(getWeather());
+    setWeather(weather);
+    show();
+    onSwitch(weather);
+  });
+  show();
+  return button;
+}
+
 // Shows the title screen inside root. Returns a function that cleans it up.
 export function mountTitle(root, { onEnter, onOpenDay }) {
   const canvas = h('canvas', { class: 'landscape', 'aria-hidden': 'true' });
@@ -416,6 +437,7 @@ export function mountTitle(root, { onEnter, onOpenDay }) {
     music.el,
     createNightButton(() => scene.refresh()),
     createSeasonButton((season) => scene.setSeason(season)),
+    createWeatherButton((weather) => scene.setWeather(weather)),
   );
 
   root.replaceChildren(screen);
@@ -424,6 +446,7 @@ export function mountTitle(root, { onEnter, onOpenDay }) {
   canvas.after(tags);
   const scene = startLandscape(canvas, {
     season: getSeason(),
+    weather: getWeather(),
     onMove(spots) {
       spots.forEach((spot, i) => {
         const tag = tags.children[i];

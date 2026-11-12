@@ -67,8 +67,11 @@ export async function openAlbum() {
   const words = h('p', { class: 'album-words' });
   const hint = h('p', { class: 'album-hint', 'aria-hidden': 'true' });
   const counter = h('span', { class: 'album-counter', 'aria-live': 'polite' });
-  const artPage = h('div', { class: 'album-page album-page--art' }, h('div', { class: 'album-art-holder' }, art, photo), photoButton, hiddenTag);
-  const wordsPage = h('div', { class: 'album-page album-page--words' }, dateLine, words, hint);
+  // Page numbers at the foot of each page, like a real book.
+  const folioArt = h('span', { class: 'album-folio', 'aria-hidden': 'true' });
+  const folioWords = h('span', { class: 'album-folio', 'aria-hidden': 'true' });
+  const artPage = h('div', { class: 'album-page album-page--art' }, h('div', { class: 'album-art-holder' }, art, photo), photoButton, hiddenTag, folioArt);
+  const wordsPage = h('div', { class: 'album-page album-page--words' }, dateLine, words, hint, folioWords);
   const spread = h('div', { class: 'album-spread' }, artPage, h('span', { class: 'album-spine', 'aria-hidden': 'true' }), wordsPage);
   const previous = h('button', { class: 'btn album-step', type: 'button', 'aria-label': 'Previous page', onclick: () => go(-1) }, '‹');
   const next = h('button', { class: 'btn album-step', type: 'button', 'aria-label': 'Next page', onclick: () => advance() }, '›');
@@ -89,12 +92,13 @@ export async function openAlbum() {
     h('div', { class: 'album-stage' }, previous, book, next),
   );
   document.body.append(root);
-  const world = startLandscape(worldCanvas, { phase: 'dawn', season: 'spring', weather: 'clear' });
+  const world = startLandscape(worldCanvas, { phase: 'dawn', season: 'spring' });
 
   // The picture is scaled by a whole number so every pixel stays square.
   function fit() {
     const holder = art.parentElement;
-    const room = holder.parentElement.clientWidth - 16;
+    const style = getComputedStyle(artPage);
+    const room = artPage.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - 4;
     const scale = Math.max(1, Math.floor(room / SCENE_W));
     holder.style.width = `${SCENE_W * scale}px`;
     holder.style.height = `${SCENE_H * scale}px`;
@@ -173,6 +177,8 @@ export async function openAlbum() {
     const current = page();
     typed = 0;
     counter.textContent = `${index + 1} of ${shown().length}`;
+    folioArt.textContent = String(index * 2 + 1);
+    folioWords.textContent = String(index * 2 + 2);
     dateLine.textContent = current.date_label || '';
     hiddenTag.hidden = !current.hidden;
     previous.disabled = index === 0;
@@ -223,7 +229,9 @@ export async function openAlbum() {
     else if (event.key === 'Escape') shut();
   };
   document.addEventListener('keydown', onKey);
-  window.addEventListener('resize', fit);
+  // The picture is refitted whenever its page changes size.
+  const watcher = new ResizeObserver(fit);
+  watcher.observe(artPage);
 
   const animation = reduceMotion
     ? null
@@ -342,7 +350,7 @@ export async function openAlbum() {
     clearInterval(animation);
     clearInterval(typeTimer);
     document.removeEventListener('keydown', onKey);
-    window.removeEventListener('resize', fit);
+    watcher.disconnect();
     world.stop();
     stopAlbumMusic();
     root.remove();

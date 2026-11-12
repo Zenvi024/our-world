@@ -572,16 +572,9 @@ function drawDrift(ctx, width, horizon, seconds) {
   }
 }
 
-// The weather changes every three hours and is the same for both of you:
-// mostly clear, sometimes rain (snow in winter), now and then a rainbow.
-function weatherNow() {
-  const manila = new Date(Date.now() + 8 * 3_600_000);
-  const block = Math.floor(manila.getTime() / (3 * 3_600_000));
-  const roll = noise(block, 7, 90);
-  if (roll < 0.14) return 'rain';
-  if (roll < 0.22) return 'rainbow';
-  return 'clear';
-}
+// The weather is chosen with its own button: clear (the default), rain, or
+// a rainbow.
+export const WEATHERS = ['clear', 'rain', 'rainbow'];
 
 function drawRainbow(ctx, width, horizon) {
   const bands = ['#ff6b6b', '#ffa94d', '#ffe066', '#8ce99a', '#74c0fc', '#b197fc'];
@@ -815,9 +808,9 @@ function drawCapybaras(ctx, herd, levels, seconds) {
 }
 
 // Draws the scene into the canvas and keeps it gently alive.
-// Options: `season` to start in; `phase` ('dawn', 'day', 'dusk', 'night') and
-// `weather` to hold the sky still instead of following the clock (the
-// storybook does this); and `onMove`, which is told where each capybara's
+// Options: `season` and `weather` to start in; `phase` ('dawn', 'day',
+// 'dusk', 'night') to hold the sky still instead of following the clock
+// (the storybook does this); and `onMove`, which is told where each capybara's
 // head is (in CSS pixels) so name tags can follow them.
 // Returns controls:
 //   stop(), refresh()
@@ -826,8 +819,8 @@ function drawCapybaras(ctx, herd, levels, seconds) {
 //   setCast(cast)
 //   setPeople({ asleep: [first, second], together })
 //   setMail(waiting)        raises the mailbox flag
-//   setSeason(season)
-export function startLandscape(canvas, { onMove, season: startSeason = 'spring', phase: startPhase = null, weather: fixedWeather = null } = {}) {
+//   setSeason(season), setWeather(weather)
+export function startLandscape(canvas, { onMove, season: startSeason = 'spring', phase: startPhase = null, weather: startWeather = 'clear' } = {}) {
   const ctx = canvas.getContext('2d');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let sky;
@@ -845,7 +838,7 @@ export function startLandscape(canvas, { onMove, season: startSeason = 'spring',
   let season = SEASONS.includes(startSeason) ? startSeason : 'spring';
   let forcedPhase = startPhase;
   let fireworks = false;
-  let weather = fixedWeather ?? weatherNow();
+  let weather = WEATHERS.includes(startWeather) ? startWeather : 'clear';
   let horizon = 0;
   let scale = 3;
   let phase = forcedPhase ?? skyPhase();
@@ -872,6 +865,7 @@ export function startLandscape(canvas, { onMove, season: startSeason = 'spring',
     const seconds = (tick * TICK_MS) / 1000;
     const dark = phase === 'night' || phase === 'dusk';
     const wet = weather === 'rain' && !look.snow;
+    const blizzard = weather === 'rain' && look.snow; // in winter, rain falls as heavy snow
     ctx.drawImage(sky, 0, 0);
     if (phase === 'night' && !wet && !reduceMotion && drawShootingStar(ctx, canvas.width, horizon, seconds)) starSeenAt = Date.now();
     drawClouds(ctx, canvas.width, horizon, seconds, phase);
@@ -889,6 +883,7 @@ export function startLandscape(canvas, { onMove, season: startSeason = 'spring',
     if (!dark && !wet && (season === 'spring' || season === 'summer')) drawButterflies(ctx, canvas.width, horizon, seconds);
     if (dark && !wet && season !== 'winter') drawFireflies(ctx, canvas.width, horizon, seconds);
     drawDrift(ctx, canvas.width, horizon, seconds);
+    if (blizzard) drawDrift(ctx, canvas.width, horizon, seconds * 1.7 + 40);
     if (wet) {
       rect(ctx, 'rgba(70, 90, 120, 0.16)', 0, 0, canvas.width, canvas.height);
       drawRain(ctx, canvas.width, canvas.height, seconds);
@@ -932,7 +927,6 @@ export function startLandscape(canvas, { onMove, season: startSeason = 'spring',
     [sky, skyCtx] = makeLayer(width, height);
     [front, frontCtx] = makeLayer(width, height);
     phase = forcedPhase ?? skyPhase();
-    weather = fixedWeather ?? weatherNow();
     drawSky(skyCtx, width, height, horizon, wide, phase);
     if (weather === 'rainbow' && phase !== 'night') drawRainbow(skyCtx, width, horizon);
     drawMountains(frontCtx, width, horizon);
@@ -989,9 +983,9 @@ export function startLandscape(canvas, { onMove, season: startSeason = 'spring',
   build();
   window.addEventListener('resize', build);
   if (!reduceMotion) timer = setInterval(step, TICK_MS);
-  // The sky changes with the hour, and the weather every few hours.
+  // The sky changes with the hour.
   const clock = setInterval(() => {
-    if ((forcedPhase ?? skyPhase()) !== phase || (fixedWeather ?? weatherNow()) !== weather) build();
+    if ((forcedPhase ?? skyPhase()) !== phase) build();
   }, 60_000);
 
   return {
@@ -1055,6 +1049,11 @@ export function startLandscape(canvas, { onMove, season: startSeason = 'spring',
     setMail(waiting) {
       if (Boolean(waiting) === mail) return;
       mail = Boolean(waiting);
+      build();
+    },
+    setWeather(next) {
+      if (!WEATHERS.includes(next) || next === weather) return;
+      weather = next;
       build();
     },
     setSeason(next) {

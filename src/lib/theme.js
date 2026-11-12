@@ -64,3 +64,30 @@ export function nextSeason(season) {
   const order = Object.keys(SEASON_NAMES);
   return order[(order.indexOf(season) + 1) % order.length];
 }
+
+// The weather over the Play screen: clear unless you choose otherwise.
+const WEATHER_KEY = 'our-world.weather';
+export const WEATHER_NAMES = { clear: 'Clear', rain: 'Rain', rainbow: 'Rainbow' };
+
+export function getWeather() {
+  try {
+    const saved = localStorage.getItem(WEATHER_KEY);
+    if (saved in WEATHER_NAMES) return saved;
+  } catch {
+    // Clear skies it is.
+  }
+  return 'clear';
+}
+
+export function setWeather(weather) {
+  try {
+    localStorage.setItem(WEATHER_KEY, weather);
+  } catch {
+    // Without storage the choice lasts until the page is closed.
+  }
+}
+
+export function nextWeather(weather) {
+  const order = Object.keys(WEATHER_NAMES);
+  return order[(order.indexOf(weather) + 1) % order.length];
+}

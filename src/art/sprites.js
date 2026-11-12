@@ -613,3 +613,61 @@ export const ICON_WINTER = [
   '.......ww.......',
   '................',
 ];
+
+// One icon for each kind of weather, for the weather button on the Play screen.
+export const ICON_CLEAR = [
+  '................',
+  '................',
+  '................',
+  '......www.......',
+  '.....wwwww.www..',
+  '....wwwwwwwwwww.',
+  '..wwwwwwwwwwwwww',
+  '.wwwwwwwwwwwwwww',
+  '.wwwwwwwwwwwwwww',
+  '..aaaaaaaaaaaaa.',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+];
+
+export const ICON_RAIN = [
+  '................',
+  '................',
+  '......aaa.......',
+  '.....aaaaa.aaa..',
+  '....aaaaaaaaaaa.',
+  '..aaaaaaaaaaaaaa',
+  '.aaaaaaaaaaaaaaa',
+  '.aaaaaaaaaaaaaaa',
+  '..mmmmmmmmmmmmm.',
+  '................',
+  '...i...i...i....',
+  '...i...i...i....',
+  '.....i...i...i..',
+  '.....i...i...i..',
+  '................',
+  '................',
+];
+
+export const ICON_RAINBOW = [
+  '................',
+  '................',
+  '.....rrrrrr.....',
+  '...rrrAAAArrr...',
+  '..rrAAyyyyAArr..',
+  '.rAAyyGGGGyyAAr.',
+  'rAyyGGiiiiGGyyAr',
+  'rAyGi......iGyAr',
+  'rAyGi......iGyAr',
+  'rAyGi......iGyAr',
+  'rAyGi......iGyAr',
+  '................',
+  '................',
+  '................',
+  '................',
+  '................',
+];

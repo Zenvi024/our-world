@@ -114,7 +114,8 @@ export const personHeight = (who) => LOOKS[who].head.length + 1 + LOOKS[who].tor
 //   shirt, jacket (worn open over the shirt), pants, shoes: colors
 //   gown:   a long graduation gown color
 //   sit:    seated (no legs are drawn; whatever they sit on hides them)
-//   blush, queasy (a green face), frame (for blinking), bob (pixels to lift)
+//   blush, queasy (a green face), mask (a white face mask),
+//   frame (for blinking), bob (pixels to lift)
 export function drawPerson(ctx, who, cx, footY, options = {}) {
   const look = LOOKS[who];
   const {
@@ -132,6 +133,7 @@ export function drawPerson(ctx, who, cx, footY, options = {}) {
     frame = 0,
     bob = 0,
     lanyard = null,
+    mask = false,
   } = options;
   const skin = queasy ? '#c9d49a' : look.skin;
   const shade = queasy ? '#aebb7f' : look.shade;
@@ -249,7 +251,14 @@ export function drawPerson(ctx, who, cx, footY, options = {}) {
   }
   const [mx, my] = look.mouth;
   const lip = '#8a3b3b';
-  if (mouth === 'smile') {
+  if (mask) {
+    // A face mask, with loops to the ears.
+    rect(ctx, '#f4f4f4', headX + 4, headY + my - 3, headW - 8, 5);
+    rect(ctx, '#f4f4f4', headX + 6, headY + my + 2, headW - 12, 1);
+    rect(ctx, '#dcdcdc', headX + 4, headY + my - 1, headW - 8, 1);
+    rect(ctx, '#e6e6e6', headX + 1, headY + my - 3, 3, 1);
+    rect(ctx, '#e6e6e6', headX + headW - 4, headY + my - 3, 3, 1);
+  } else if (mouth === 'smile') {
     rect(ctx, lip, headX + mx - 2, headY + my, 5, 1);
     rect(ctx, lip, headX + mx - 3, headY + my - 1, 1, 1);
     rect(ctx, lip, headX + mx + 3, headY + my - 1, 1, 1);
